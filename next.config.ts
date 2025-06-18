@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true, // Skip ESLint during production builds
   },
   images: {
-    domains: ['localhost',"firebasestorage.googleapis.com"], // For external images from localhost or other domains
+    domains: ['localhost',"firebasestorage.googleapis.com", "images.unsplash.com"], // For external images from localhost or other domains
   },
 };
 export default nextConfig;

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "1",
+    "title": "Soccer",
+    "remainingQuantity": 150,
+    "stockQuality": "High",
+    "imageUrl": "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop",
+    "category": "Soccer",
+    "description": "Professional soccer match action shot"
+  },
+  {
+    "id": "2",
+    "title": "Cricket Match",
+    "remainingQuantity": 75,
+    "stockQuality": "Medium",
+    "imageUrl": "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=300&fit=crop",
+    "category": "Cricket",
+    "description": "Cricket player in action"
+  },
+  {
+    "id": "3",
+    "title": "Basketball Court",
+    "remainingQuantity": 200,
+    "stockQuality": "High",
+    "imageUrl": "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop",
+    "category": "Basketball",
+    "description": "Basketball court with players"
+  },
+  {
+    "id": "4",
+    "title": "Tennis Match",
+    "remainingQuantity": 50,
+    "stockQuality": "Low",
+    "imageUrl": "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop",
+    "category": "Tennis",
+    "description": "Tennis player serving"
+  },
+  {
+    "id": "5",
+    "title": "Football Stadium",
+    "remainingQuantity": 120,
+    "stockQuality": "High",
+    "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "category": "Soccer",
+    "description": "Full football stadium view"
+  },
+  {
+    "id": "6",
+    "title": "Golf Course",
+    "remainingQuantity": 80,
+    "stockQuality": "Medium",
+    "imageUrl": "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop",
+    "category": "Golf",
+    "description": "Beautiful golf course landscape"
+  },
+  {
+    "id": "7",
+    "title": "Swimming Pool",
+    "remainingQuantity": 90,
+    "stockQuality": "High",
+    "imageUrl": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400&h=300&fit=crop",
+    "category": "Swimming",
+    "description": "Olympic swimming pool"
+  },
+  {
+    "id": "8",
+    "title": "Boxing Ring",
+    "remainingQuantity": 30,
+    "stockQuality": "Low",
+    "imageUrl": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=300&fit=crop",
+    "category": "Boxing",
+    "description": "Professional boxing ring"
+  },
+  {
+    "id": "9",
+    "title": "Volleyball Court",
+    "remainingQuantity": 110,
+    "stockQuality": "High",
+    "imageUrl": "https://images.unsplash.com/photo-1592659762303-90081d34b277?w=400&h=300&fit=crop",
+    "category": "Volleyball",
+    "description": "Beach volleyball action"
+  },
+  {
+    "id": "10",
+    "title": "Hockey Match",
+    "remainingQuantity": 60,
+    "stockQuality": "Medium",
+    "imageUrl": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
+    "category": "Hockey",
+    "description": "Ice hockey game in progress"
+  },
+  {
+    "id": "11",
+    "title": "Rugby Field",
+    "remainingQuantity": 45,
+    "stockQuality": "Low",
+    "imageUrl": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
+    "category": "Rugby",
+    "description": "Rugby field with players"
+  },
+  {
+    "id": "12",
+    "title": "Baseball Diamond",
+    "remainingQuantity": 95,
+    "stockQuality": "High",
+    "imageUrl": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
+    "category": "Baseball",
+    "description": "Baseball field with players"
+  }
+] 

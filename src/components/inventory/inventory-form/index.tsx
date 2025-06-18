@@ -1,4 +1,4 @@
-// ✅ inventory-form.tsx
+ // ✅ inventory-form.tsx
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -340,13 +340,21 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             <div className="form-group">
               <label htmlFor="prizeCategory" className="block text-sm font-medium text-gray-700 mb-1">Prize Category*</label>
               <div className="flex gap-2">
-                <input 
-                  className={`form-control flex-1 ${errors.prizeCategory ? 'border-red-500' : ''}`} 
-                  type="text" 
-                  id="prizeCategory" 
-                  placeholder="Enter prize category" 
-                  {...register("prizeCategory")}
-                />
+              <select 
+                id="prizeCategory" 
+                className={`form-control ${errors.prizeCategory ? 'border-red-500' : ''}`} 
+                {...register("prizeCategory")}
+              >
+                <option value="">Select Prize Category</option>
+                <option value="Vehicle">Vehicle</option>
+                <option value="Lifestyle">Lifestyle</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Devices">Devices</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Style">Style</option>
+                <option value="Beauty & Grooming">Beauty & Grooming</option>
+              </select>
+              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory.message}</p>}
                 <button 
                   type="button"
                   className="form-control w-[200px] md:w-[250px] text-left text-gray-500 hover:bg-gray-50"

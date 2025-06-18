@@ -10,9 +10,20 @@ import { uploadImageToFirebase } from "../../../../service/uploadImage";
 import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
 import { db } from "../../../../config/firebase.config";
 import { toast } from "react-toastify";
+import ImageSelectionModal from "../../game-image-library/ImageSelectionModal";
 
 interface UploadedFile {
   url: string;
+}
+
+interface ImageData {
+  id: string;
+  title: string;
+  remainingQuantity: number;
+  stockQuality: string;
+  imageUrl: string;
+  category: string;
+  description: string;
 }
 
 export interface FormData {
@@ -54,9 +65,9 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   const [file, setFile] = useState<UploadedFile | null>(
     initialData?.picture ? { url: initialData.picture } : null
   );
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>("");
+  const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
 
   const {
     register,
@@ -88,25 +99,19 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     console.log("Form Values Updated:", {
       ...watchedValues,
       file: file?.url,
-      selectedFile: selectedFile?.name,
       formErrors: errors,
       isValid
     });
-  }, [watchedValues, file, selectedFile, errors, isValid]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0];
-    if (selected) {
-      setSelectedFile(selected);
-      setFile({ url: URL.createObjectURL(selected) });
-      console.log("File selected:", selected.name);
-    }
-  };
+  }, [watchedValues, file, errors, isValid]);
 
   const removeFile = () => {
     setFile(null);
-    setSelectedFile(null);
     console.log("File removed");
+  };
+
+  const handleImageSelect = (image: ImageData) => {
+    setFile({ url: image.imageUrl });
+    console.log("Image selected from library:", image.title);
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -122,18 +127,10 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
       console.log("=== RAFFLE FORM SUBMISSION STARTED ===");
       console.log("Raw Form Data:", data);
       console.log("File:", file?.url);
-      console.log("Selected File:", selectedFile?.name);
-
-      let uploadedUrl = "";
-      if (selectedFile) {
-        console.log("Uploading file to Firebase...");
-        uploadedUrl = await uploadImageToFirebase(selectedFile);
-        console.log("Uploaded URL:", uploadedUrl);
-      }
 
       const formData: FormData = {
         ...data,
-        picture: uploadedUrl || file?.url || "",
+        picture: file?.url || "",
         createdAt: new Date(data.createdAt).toISOString(),
         expiryDate: new Date(data.expiryDate).toISOString(),
       };
@@ -153,7 +150,6 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
 
       reset();
       setFile(null);
-      setSelectedFile(null);
       
       if (onSubmit) {
         onSubmit(formData);
@@ -184,238 +180,232 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   };
 
   return (
-    <div className="border border-[#D0D5DD] rounded-xl p-4 md:p-6 bg-white w-full max-w-4xl mx-auto">
-      <h2 className="text-[18px] md:text-[24px] font-semibold text-dark mb-6 md:mb-8">{formHeading}</h2>
-      
-      {submitError && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{submitError}</p>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-        <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
-          <div className="form-group">
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title*</label>
-            <input
-              className={`form-control ${errors.title ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
-              type="text"
-              id="title"
-              placeholder="Enter raffle title"
-              {...register("title")}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-            />
-            {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Prize Description*</label>
-            <input
-              className={`form-control ${errors.description ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
-              type="text"
-              id="description"
-              placeholder="Enter prize description"
-              {...register("description")}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-            />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-1 grid-cols-1 gap-4 md:gap-6 mb-4">
-          <div className="form-group col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Game Image</label>
-            <div className="form-control relative flex flex-col items-center justify-center">
-              <div className="absolute left-4 top-[50%] translate-y-[-50%]">
-                {file ? (
-                  <div className="relative rounded-lg overflow-hidden">
-                    <Image
-                      src={file.url}
-                      width={150}
-                      height={80}
-                      alt="Uploaded file"
-                      className="w-[140px] h-[110px] object-cover rounded"
-                    />
-                    <button
-                      onClick={removeFile}
-                      type="button"
-                      className="absolute top-2 right-2 bg-white text-gray-700 rounded-full shadow h-5 w-5 hover:bg-gray-100 transition-colors"
-                      aria-label="Remove file"
-                    >
-                      ✕
-                    </button>
-                    <p className="text-[8px] text-white mt-2 bg-[#00000033] absolute bottom-0 left-0 w-full text-center">
-                      Current Thumbnail
-                    </p>
-                  </div>
-                ) : (
-                  <Image
-                    src="/images/thumb.png"
-                    alt="photo"
-                    height={80}
-                    width={135}
-                    className="w-[140px] h-[110px] object-fill rounded"
-                  />
-                )}
-              </div>
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer !flex flex-col justify-center items-center text-center"
-              >
-                <Image src="/images/icon/upload-icon.png" alt="icon" height={40} width={40} />
-                <span className="mt-3 text-sm font-normal text-gray block">
-                  <strong className="text-primary font-semibold">Click to upload </strong>
-                  or drag and drop
-                </span>
-                <span className="text-gray-500 text-sm text-center mt-2">
-                  SVG, PNG, JPG, or GIF (max: 800x400px)
-                </span>
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <span className="text-gray-500 text-xs mt-2 block">Upload game image (SVG, PNG, JPG, or GIF, max: 800x400px)</span>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
-          <div className="form-group">
-            <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-700 mb-1">Ticket Price*</label>
-            <input
-              className={`form-control ${errors.ticketPrice ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
-              type="number"
-              id="ticketPrice"
-              placeholder="Enter ticket price"
-              min="0"
-              step="0.01"
-              {...register("ticketPrice")}
-              onChange={(e) => handleInputChange("ticketPrice", parseFloat(e.target.value) || 0)}
-            />
-            {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category*</label>
-            <select 
-              id="category" 
-              className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`} 
-              {...register("category")}
-              onChange={(e) => handleInputChange("category", e.target.value)}
-            >
-              <option value="">Select Category</option>
-              <option value="Gaming">Gaming</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Fashion">Fashion</option>
-              <option value="Sports">Sports</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Other">Other</option>
-            </select>
-            {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
-            <input
-              className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
-              type="text"
-              id="gameDescription"
-              placeholder="Enter game description"
-              {...register("gameDescription")}
-              onChange={(e) => handleInputChange("gameDescription", e.target.value)}
-            />
-            {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
-          <div className="form-group">
-            <label htmlFor="createdAt" className="block text-sm font-medium text-gray-700 mb-1">Start Date*</label>
-            <input
-              className={`form-control ${errors.createdAt ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
-              type="date"
-              id="createdAt"
-              min={getCurrentDate()}
-              {...register("createdAt")}
-              onChange={(e) => handleInputChange("createdAt", e.target.value)}
-            />
-            {errors.createdAt && <p className="text-red-500 text-sm mt-1">{errors.createdAt.message}</p>}
-          </div>
-          <div className="form-group">
-            <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">End Date*</label>
-            <input
-              className={`form-control ${errors.expiryDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
-              type="date"
-              id="expiryDate"
-              min={getCurrentDate()}
-              {...register("expiryDate")}
-              onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-            />
-            {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate.message}</p>}
-          </div>
-        </div>
-
-        {/* Add action buttons below Status */}
-        {formHeading.includes("Edit") && (
-          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
-            <div className="form-group">
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status*</label>
-              <select 
-                id="status" 
-                className={`form-control ${errors.status ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`} 
-                {...register("status")}
-                onChange={(e) => handleInputChange("status", e.target.value)}
-              >
-                <option value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="Ended">Ended</option>
-                <option value="Ending Soon">Ending Soon</option>
-              </select>
-              {errors.status && <p className="text-red-500 text-sm mt-1">{errors.status.message}</p>}
-            </div>
-            <div className="form-group flex flex-col sm:flex-row gap-2 sm:gap-4 items-center justify-evenly mt-2">
-              <button
-                type="button"
-                className="w-full sm:w-auto px-4 py-2 rounded bg-[#7F1919] text-white font-medium hover:bg-[#6A1515] transition-colors"
-                onClick={handleEndEarly}
-              >
-                End Early
-              </button>
-              <button
-                type="button"
-                className="w-full sm:w-auto px-4 py-2 rounded bg-[#FF3B30] text-white font-medium hover:bg-[#E6352B] transition-colors"
-                onClick={handleRefund}
-              >
-                Refund
-              </button>
-              <button
-                type="button"
-                className="w-full sm:w-auto px-4 py-2 rounded bg-[#72EA5A] text-white font-medium hover:bg-[#65D351] transition-colors"
-                onClick={handleExtend}
-              >
-                Extend
-              </button>
-            </div>
+    <>
+      <div className="border border-[#D0D5DD] rounded-xl p-4 md:p-6 bg-white w-full max-w-4xl mx-auto">
+        <h2 className="text-[18px] md:text-[24px] font-semibold text-dark mb-6 md:mb-8">{formHeading}</h2>
+        
+        {submitError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{submitError}</p>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6">
-          <Link
-            href="./"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
-          >
-            Save
-          </button>
-        </div>
-      </form>
-    </div>
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title*</label>
+              <input
+                className={`form-control ${errors.title ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
+                type="text"
+                id="title"
+                placeholder="Enter raffle title"
+                {...register("title")}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+              />
+              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Prize Description*</label>
+              <input
+                className={`form-control ${errors.description ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
+                type="text"
+                id="description"
+                placeholder="Enter prize description"
+                {...register("description")}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+              />
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-1 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Game Image</label>
+              <div className="form-control relative flex flex-col items-center justify-center">
+                <div className="absolute left-4 top-[50%] translate-y-[-50%]">
+                  {file ? (
+                    <div className="relative rounded-lg overflow-hidden">
+                      <Image
+                        src={file.url}
+                        width={150}
+                        height={80}
+                        alt="Uploaded file"
+                        className="w-[140px] h-[110px] object-cover rounded"
+                      />
+                      <button
+                        onClick={removeFile}
+                        type="button"
+                        className="absolute top-2 right-2 bg-white text-gray-700 rounded-full shadow h-5 w-5 hover:bg-gray-100 transition-colors"
+                        aria-label="Remove file"
+                      >
+                        ✕
+                      </button>
+                      <p className="text-[8px] text-white mt-2 bg-[#00000033] absolute bottom-0 left-0 w-full text-center">
+                        Current Thumbnail
+                      </p>
+                    </div>
+                  ) : (
+                    <Image
+                      src="/images/thumb.png"
+                      alt="photo"
+                      height={80}
+                      width={135}
+                      className="w-[140px] h-[110px] object-fill rounded"
+                    />
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsImageModalOpen(true)}
+                  className="cursor-pointer !flex flex-col justify-center items-center text-center py-8 border-2 border-dashed border-[#D0D5DD] rounded-lg hover:border-primary hover:bg-gray-50 transition-colors w-full"
+                >
+                  <Image src="/images/icon/upload-icon.png" alt="icon" height={40} width={40} />
+                  <span className="mt-3 text-sm font-normal text-gray block">
+                    <span className="text-primary font-semibold">Select from Game Library</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group">
+              <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-700 mb-1">Ticket Price*</label>
+              <input
+                className={`form-control ${errors.ticketPrice ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
+                type="number"
+                id="ticketPrice"
+                placeholder="Enter ticket price"
+                min="0"
+                step="0.01"
+                {...register("ticketPrice")}
+                onChange={(e) => handleInputChange("ticketPrice", parseFloat(e.target.value) || 0)}
+              />
+              {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category*</label>
+              <select 
+                id="category" 
+                className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`} 
+                {...register("category")}
+                onChange={(e) => handleInputChange("category", e.target.value)}
+              >
+                <option value="" selected>Select Category</option>
+                <option value="Soccer">Soccer</option>
+                <option value="Cricket">Cricket</option>
+                <option value="Basketball">Basketball</option>
+              </select>
+              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
+              <input
+                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
+                type="text"
+                id="gameDescription"
+                placeholder="Enter game description"
+                {...register("gameDescription")}
+                onChange={(e) => handleInputChange("gameDescription", e.target.value)}
+              />
+              {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group">
+              <label htmlFor="createdAt" className="block text-sm font-medium text-gray-700 mb-1">Start Date*</label>
+              <input
+                className={`form-control ${errors.createdAt ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
+                type="date"
+                id="createdAt"
+                min={getCurrentDate()}
+                {...register("createdAt")}
+                onChange={(e) => handleInputChange("createdAt", e.target.value)}
+              />
+              {errors.createdAt && <p className="text-red-500 text-sm mt-1">{errors.createdAt.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">End Date*</label>
+              <input
+                className={`form-control ${errors.expiryDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
+                type="date"
+                id="expiryDate"
+                min={getCurrentDate()}
+                {...register("expiryDate")}
+                onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+              />
+              {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate.message}</p>}
+            </div>
+          </div>
+
+          {/* Add action buttons below Status */}
+          {formHeading.includes("Edit") && (
+            <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
+              <div className="form-group">
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status*</label>
+                <select 
+                  id="status" 
+                  className={`form-control ${errors.status ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`} 
+                  {...register("status")}
+                  onChange={(e) => handleInputChange("status", e.target.value)}
+                >
+                  <option value="">Select Status</option>
+                  <option value="Active">Active</option>
+                  <option value="Ended">Ended</option>
+                  <option value="Ending Soon">Ending Soon</option>
+                </select>
+                {errors.status && <p className="text-red-500 text-sm mt-1">{errors.status.message}</p>}
+              </div>
+              <div className="form-group flex flex-col sm:flex-row gap-2 sm:gap-4 items-center justify-evenly mt-2">
+                <button
+                  type="button"
+                  className="w-full sm:w-auto px-4 py-2 rounded bg-[#7F1919] text-white font-medium hover:bg-[#6A1515] transition-colors"
+                  onClick={handleEndEarly}
+                >
+                  End Early
+                </button>
+                <button
+                  type="button"
+                  className="w-full sm:w-auto px-4 py-2 rounded bg-[#FF3B30] text-white font-medium hover:bg-[#E6352B] transition-colors"
+                  onClick={handleRefund}
+                >
+                  Refund
+                </button>
+                <button
+                  type="button"
+                  className="w-full sm:w-auto px-4 py-2 rounded bg-[#72EA5A] text-white font-medium hover:bg-[#65D351] transition-colors"
+                  onClick={handleExtend}
+                >
+                  Extend
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6">
+            <Link
+              href="./"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <ImageSelectionModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onSelectImage={handleImageSelect}
+      />
+    </>
   );
 };
 

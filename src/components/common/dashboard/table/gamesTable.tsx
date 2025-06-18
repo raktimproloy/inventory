@@ -30,21 +30,53 @@ interface GamesTableProps {
   onDelete: (id: string) => void;
 }
 
-const countDown = {
-    createdAt: {
-        "seconds": 1749945600,
-        "nanoseconds": 0
-    },
-    expiryDate: {
-        "seconds": 1750204800,
-        "nanoseconds": 0
-    }
-};
+const countDown = [
+  {
+      createdAt: {
+          "seconds": Math.floor(new Date('2025-06-21').getTime() / 1000), // Starts June 21, 2025 (Pending)
+          "nanoseconds": 0
+      },
+      expiryDate: {
+          "seconds": Math.floor(new Date('2025-06-24').getTime() / 1000), // Ends June 24, 2025 (3 days later)
+          "nanoseconds": 0
+      }
+  },
+  {
+      createdAt: {
+          "seconds": Math.floor(new Date('2025-06-17').getTime() / 1000), // Started June 17, 2025 (Live)
+          "nanoseconds": 0
+      },
+      expiryDate: {
+          "seconds": Math.floor(new Date('2025-06-20').getTime() / 1000), // Ends June 20, 2025
+          "nanoseconds": 0
+      }
+  },
+  {
+      createdAt: {
+          "seconds": Math.floor(new Date('2025-06-18').getTime() / 1000), // Started June 18, 2025 (Live)
+          "nanoseconds": 0
+      },
+      expiryDate: {
+          "seconds": Math.floor(new Date('2025-06-19').getTime() / 1000), // Ends June 19, 2025
+          "nanoseconds": 0
+      }
+  },
+  {
+      createdAt: {
+          "seconds": Math.floor(new Date('2025-06-12').getTime() / 1000), // Started June 12, 2025 (Live)
+          "nanoseconds": 0
+      },
+      expiryDate: {
+          "seconds": Math.floor(new Date('2025-06-17').getTime() / 1000), // Ended June 17, 2025 (Expired)
+          "nanoseconds": 0
+      }
+  }
+];
 
-const getStatus = () => {
+const getStatus = (index: number) => {
   const now = new Date().getTime();
-  const createdTime = countDown.createdAt.seconds * 1000;
-  const expiryTime = countDown.expiryDate.seconds * 1000;
+  const createdTime = countDown[index].createdAt.seconds * 1000;
+  const expiryTime = countDown[index].expiryDate.seconds * 1000;
 
   if (now < createdTime) {
     return 'Pending';
@@ -58,14 +90,16 @@ const getStatus = () => {
 const getCountdown = (now: Date, targetDate: Date) => {
   let diff = Math.max(0, targetDate.getTime() - now.getTime());
   if (diff === 0) {
-    return '0 Day: 00 Hours: 00 Mins';
+    return '0 Day: 00 Hours: 00 Mins: 00 Secs';
   }
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   diff -= days * (1000 * 60 * 60 * 24);
   const hours = Math.floor(diff / (1000 * 60 * 60));
   diff -= hours * (1000 * 60 * 60);
   const mins = Math.floor(diff / (1000 * 60));
-  return `${days} Day${days !== 1 ? 's' : ''}: ${hours.toString().padStart(2, '0')} Hours: ${mins.toString().padStart(2, '0')} Mins`;
+  diff -= mins * (1000 * 60);
+  const secs = Math.floor(diff / 1000);
+  return `${days} Day${days !== 1 ? 's' : ''}: ${hours.toString().padStart(2, '0')} Hours: ${mins.toString().padStart(2, '0')} Mins: ${secs.toString().padStart(2, '0')} Secs`;
 };
 
 const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => {
@@ -184,20 +218,20 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
               </tr>
             </thead>
             <tbody>
-              {sortedItems.map((item) => {
-                const status = getStatus();
+              {sortedItems.map((item, index) => {
+                const status = getStatus(index);
                 const now = currentTime;
                 let countdownTarget: Date;
                 let countdownText: string;
 
                 if (status === 'Pending') {
-                  countdownTarget = new Date(countDown.createdAt.seconds * 1000);
+                  countdownTarget = new Date(countDown[index].createdAt.seconds * 1000);
                   countdownText = getCountdown(now, countdownTarget);
                 } else if (status === 'Live') {
-                  countdownTarget = new Date(countDown.expiryDate.seconds * 1000);
+                  countdownTarget = new Date(countDown[index].expiryDate.seconds * 1000);
                   countdownText = getCountdown(now, countdownTarget);
                 } else {
-                  countdownText = '0 Day: 00 Hours: 00 Mins';
+                  countdownText = '0 Day: 00 Hours: 00 Mins: 00 Secs';
                 }
 
                 return (
