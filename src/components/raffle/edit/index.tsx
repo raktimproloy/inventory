@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { toast } from 'react-toastify';
 import { fetchSingleData, updatedData } from "../../../../utility";
 import AppConst from "../../../../config/app.config";
-import RaffleForm from "../form";
+import RaffleForm, { FormData } from "../form";
 
 const EditRaffle: React.FC = () => {
   const router = useRouter();

@@ -41,7 +41,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const getTopInventory = async () => {
     try {
       // Fetch top 5 items from the "Prize_Database" collection
-      const topInventory = await fetchUser("prize_database", 5); // Limit to 5 items
+      const topInventory = await fetchUser("prize_database", 4); // Limit to 5 items
       setInventoryData(topInventory);
     } catch (error) {
       console.error("Error fetching top inventory data:", error);

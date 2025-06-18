@@ -118,6 +118,12 @@ const SidebarData: Array<SidebarData> = [
   },
   {
     id: 7,
+    title: "Game Images",
+    url: "/game-images",
+    icon: "/images/icon/05.svg",
+  },
+  {
+    id: 8,
     title: "Partner Management",
     url: "/partner-management",
     icon: "/images/icon/04.svg",

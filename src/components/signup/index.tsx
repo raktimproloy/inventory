@@ -3,8 +3,11 @@ import { useState } from "react";
 import { auth, googleProvider, facebookProvider } from "../../../config/firebase.config"; // Import Firebase auth
 import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/router";
+import Link from "next/link";
+import Image from "next/image";
 
 const Signup = () => {
+  const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -12,6 +15,7 @@ const Signup = () => {
 
   // Handle email/password signup
   const handleSignup = async (e: React.FormEvent) => {
+    // console.log(name, email, password);
     e.preventDefault();
     try {
       await createUserWithEmailAndPassword(auth, email, password);
@@ -42,62 +46,79 @@ const Signup = () => {
   // };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
-        <h2 className="text-2xl font-semibold text-center mb-4">Sign Up</h2>
+    <div className="bg-[#F3F3F5] flex items-center">
+      <div className="basis-6/12 bg-white lg:rounded-[65px] overflow-hidden h-[100vh]">
+        <div className="p-4 lg:p-8 pb-8 md:mb-28">
+            <Image src="/images/logo.svg" alt="logo" height={30} width={150}/>
+        </div>
+        <div className="max-w-[360px] mx-auto">
+          <h2 className="md:text-4xl text-xl text-[#101828] font-semibold mb-2">Sign up</h2>
+          <p className="mb-8">Start your 30-day free trial</p>
+          {error && <div className="text-red-500 text-center mb-4">{error}</div>}
+          <div className="mb-5">
+            <p className="mb-1">Full Name*</p>
+            <input
+              type="text"
+              className="block w-full p-3 mb-4 border border-[#D0D5DD] rounded-[8px] outline-none"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="mb-5">
+            <p className="mb-1">Email*</p>
+            <input
+              type="email"
+              className="block w-full p-3 mb-4 border border-[#D0D5DD] rounded-[8px] outline-none"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="mb-5">
+            <p className="mb-1">Password*</p>
+              <input
+                type="password"
+                className="block w-full p-3 mb-0 border border-[#D0D5DD] rounded-[8px] outline-none"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+          <p className="mb-1 pt-0 mt-0">Must be at least 8 characters</p>
+          </div>
+           <button
+            onClick={handleSignup}
+            className="w-full p-3 bg-[#DC5326] text-white rounded-lg " > Sign Up </button>
+          <div className="flex justify-between items-center gap-2 mb-5 mt-5">
+            <span className="block bg-[#B3B2B2] h-[1px] w-6/12"></span>
+            <span>or</span>
+            <span className="block bg-[#B3B2B2] h-[1px] w-6/12"></span>
+          </div>
+          {/* <button
+            onClick={handleGoogleSignup}
+            className="w-full p-3 bg-white border border-[#D0D5DD] rounded-lg flex items-center justify-center gap-2"
+          >
+            <Image src="/images/google.svg" alt="icon" height={24} width={24}/>
+            Sign up with Google
+          </button> */}
+          {/* <button
+            onClick={handleFacebookSignup}
+            className="w-full p-3 bg-white border border-[#D0D5DD] rounded-lg flex items-center justify-center gap-2 mt-5"
+          >
+            <Image src="/images/linkedin.svg" alt="icon" height={24} width={24}/>
+            Sign up with LinkedIn
+          </button> */}
 
-        {/* Display error message */}
-        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-
-        {/* Email input */}
-        <input
-          type="email"
-          className="block w-full p-3 mb-4 border border-gray-300 rounded-md"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        {/* Password input */}
-        <input
-          type="password"
-          className="block w-full p-3 mb-4 border border-gray-300 rounded-md"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        {/* Signup button */}
-        <button
-          onClick={handleSignup}
-          className="w-full p-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition duration-200"
-        >
-          Sign Up
-        </button>
-
-        {/* Google signup button */}
-        {/* <button
-          onClick={handleGoogleSignup}
-          className="w-full p-3 bg-red-500 text-white rounded-md mt-4 hover:bg-red-600 transition duration-200"
-        >
-          Sign up with Google
-        </button> */}
-
-        {/* Facebook signup button */}
-        {/* <button
-          onClick={handleFacebookSignup}
-          className="w-full p-3 bg-blue-600 text-white rounded-md mt-4 hover:bg-blue-700 transition duration-200"
-        >
-          Sign up with Facebook
-        </button> */}
-
-        {/* Login link */}
-        <p className="mt-4 text-center">
-          Already have an account?{" "}
-          <a href="/login" className="text-blue-500 hover:underline">
-            Login
-          </a>
-        </p>
+          <p className="mt-4 text-center">
+            Already have an account?{" "}
+            <Link href="/login" className="text-[#DC5326] hover:underline">
+              Log in
+            </Link>
+          </p>
+        </div>
+      </div>
+      <div className="basis-6/12 overflow-hidden">
+        <Image src="/images/login.jpg" alt="img" height={1024} width={720} className="max-w-[720px] ml-auto"/>
       </div>
     </div>
   );

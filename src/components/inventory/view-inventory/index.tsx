@@ -47,7 +47,7 @@ const ViewInventory: React.FC = () => {
           <p className="text-sm text-dark">{inventoryItem.prizeName}</p>
         </div>
         <div className="form-group">
-          <label>Ticket Sold</label>
+          <label>Games Attached</label>
           <p className="text-sm text-dark">{inventoryItem.ticketSold}</p>
         </div>
         <div className="form-group">

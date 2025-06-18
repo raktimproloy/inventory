@@ -50,15 +50,15 @@ const formatDate = (date: Timestamp | Date | string) => {
     </div>
   return (
     <div className="border border-[rgb(208,213,221)] rounded-xl p-6 bg-white w-full">
-      <h1 className="text-[18px] font-semibold text-dark mb-8">View Raffle</h1>
+      <h1 className="text-[18px] font-semibold text-dark mb-8">View Games</h1>
       <div className="grid md:grid-cols-2 grid-cols-1 gap-6">
         <div className="form-group">
           <label>Title</label>
           <p className="text-sm text-dark">{raffles.title}</p>
         </div>
         <div className="form-group">
-          <label>Prize Name</label>
-          <p className="text-sm text-dark">{raffles.description}</p>
+          <label>Prize</label>
+          <p className="text-sm text-dark">{raffles.title}</p>
         </div>
         <div className="form-group">
           <label>Start Date</label>
@@ -68,12 +68,20 @@ const formatDate = (date: Timestamp | Date | string) => {
           <label>End Date</label>
           <p className="text-sm text-dark">{formatDate(raffles.expiryDate)}</p>
         </div>
-        <div className="form-group md:col-span-2">
+        <div className="form-group">
           <label>Status</label>
           <p className="text-sm text-dark">{raffles.status || "Active"}</p>
         </div>
+        <div className="form-group">
+          <label>Ticket Price</label>
+          <p className="text-sm text-dark">{raffles.title}</p>
+        </div>
         <div className="form-group md:col-span-2">
-          <label>Prize Image</label>
+          <label>Game Description</label>
+          <p className="text-sm text-dark">{raffles.description}</p>
+        </div>
+        <div className="form-group md:col-span-2">
+          <label>Game Image</label>
           {raffles.picture && (
             <Image
               src={raffles.picture}

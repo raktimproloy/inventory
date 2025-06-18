@@ -17,7 +17,7 @@ const CreateRaffle: React.FC = () => {
   return (
     <div>
       <RaffleForm
-        formHeading="Create Raffle "
+        formHeading="Create Game "
         onSubmit={handleCreate}
       />
     </div>
