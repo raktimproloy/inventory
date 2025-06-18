@@ -90,16 +90,14 @@ const getStatus = (index: number) => {
 const getCountdown = (now: Date, targetDate: Date) => {
   let diff = Math.max(0, targetDate.getTime() - now.getTime());
   if (diff === 0) {
-    return '0 Day: 00 Hours: 00 Mins: 00 Secs';
+    return '0 Day: 00 Hours: 00 Mins';
   }
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   diff -= days * (1000 * 60 * 60 * 24);
   const hours = Math.floor(diff / (1000 * 60 * 60));
   diff -= hours * (1000 * 60 * 60);
   const mins = Math.floor(diff / (1000 * 60));
-  diff -= mins * (1000 * 60);
-  const secs = Math.floor(diff / 1000);
-  return `${days} Day${days !== 1 ? 's' : ''}: ${hours.toString().padStart(2, '0')} Hours: ${mins.toString().padStart(2, '0')} Mins: ${secs.toString().padStart(2, '0')} Secs`;
+  return `${days} Day${days !== 1 ? 's' : ''}: ${hours.toString().padStart(2, '0')} Hours: ${mins.toString().padStart(2, '0')} Mins`;
 };
 
 const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => {
@@ -231,7 +229,7 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
                   countdownTarget = new Date(countDown[index].expiryDate.seconds * 1000);
                   countdownText = getCountdown(now, countdownTarget);
                 } else {
-                  countdownText = '0 Day: 00 Hours: 00 Mins: 00 Secs';
+                  countdownText = '0 Day: 00 Hours: 00 Mins';
                 }
 
                 return (
