@@ -183,7 +183,7 @@ const EditImagePage = () => {
             console.log("=== FORM UPDATE COMPLETE ===");
 
             alert("Image updated successfully!");
-            router.push("/image-library");
+            router.push("/prize-image-library");
         } catch (error) {
             console.error("Error updating image:", error);
             setSubmitError("Failed to update image. Please try again.");
@@ -306,7 +306,7 @@ const EditImagePage = () => {
 
                 <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6">
                     <Link 
-                        href="/image-library" 
+                        href="/prize-image-library" 
                         className="w-full sm:w-auto inline-flex items-center justify-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
                     >
                         Cancel

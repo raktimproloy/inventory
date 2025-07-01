@@ -48,11 +48,11 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
 
   // Handlers for dropdown actions
   const handleView = (id: string) => { // Changed to string
-    router.push(`/inventory-database/inventory-view/${id}`);
+    router.push(`/prize-database/inventory-view/${id}`);
   };
 
   const handleEdit = (id: string) => { // Changed to string
-    router.push(`/inventory-database/${id}`);
+    router.push(`/prize-database/${id}`);
   };
 
   // Handle Delete
@@ -117,7 +117,7 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
               </svg>
               <span>Filter</span>
             </button>
-            <Link href="/inventory-database/create-inventory" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">
+            <Link href="/prize-database/create-inventory" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">
               + Create New
             </Link>
           </div>

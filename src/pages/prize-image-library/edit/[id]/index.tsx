@@ -1,14 +1,14 @@
-import ViewImagePage from "@/components/image-library/view";
+import EditImagePage from "@/components/prize-image-library/editForm";
 import ChsHead from "@/components/layouts/ChsHead";
 import PrivateRoute from "@/routes/PrivetRoute";
 
-const ViewImgPage = () => {
+const EditImgPage = () => {
     return (
         <PrivateRoute>
             <ChsHead />
-            <ViewImagePage />
+            <EditImagePage />
         </PrivateRoute>
     );
 };
 
-export default ViewImgPage;
+export default EditImgPage;

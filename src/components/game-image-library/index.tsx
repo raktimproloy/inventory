@@ -79,7 +79,7 @@ const ImageLibrary = () => {
                         </div>
                         <div className="flex justify-between items-center gap-2 mt-4">
                             <h3 className="text-base text-[#030303] font-medium">{img.title}</h3>
-                            {img.stockQuality === "Low" ?
+                            {/* {img.stockQuality === "Low" ?
                                 <span className="text-[#D12A2A] border border-[#D12A2A] rounded-full flex items-center gap-1 px-2 py-1 text-xs font-medium">
                                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M5 1.5V8.5M5 8.5L8.5 5M5 8.5L1.5 5" stroke="#F04438" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -93,7 +93,7 @@ const ImageLibrary = () => {
                                     </svg>
                                     {img.stockQuality}
                                 </span>
-                            }
+                            } */}
                         </div>
                     </div>
                 ))}

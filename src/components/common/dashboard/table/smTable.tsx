@@ -52,7 +52,7 @@ console.log(options)
         <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white">
             <div className="flex justify-between items-center">
                 <h3 className="text-[18px] font-semibold text-dark">Inventory Stock</h3>
-                <Link className="text-sm font-semibold text-primary" href="/inventory-database">See All</Link>
+                <Link className="text-sm font-semibold text-primary" href="/prize-database">See All</Link>
             </div>
             <div className="overflow-auto">
                 <table className="w-full mt-2">

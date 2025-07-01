@@ -44,7 +44,7 @@ const AddImagePage = () => {
             });
 
             alert("Image added successfully!");
-            router.push("/image-library");
+            router.push("/prize-image-library");
         } catch (error) {
             console.error(error);
             alert("Failed to add image.");
@@ -135,7 +135,7 @@ const AddImagePage = () => {
                     </div>
                 </div>
                 <div className="flex justify-end items-center gap-4 mt-6 col-span-2">
-                    <Link href="/image-library" className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">Cancel</Link>
+                    <Link href="/prize-image-library" className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">Cancel</Link>
                     <button
                         type="submit"
                         className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"

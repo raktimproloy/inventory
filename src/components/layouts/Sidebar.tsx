@@ -89,7 +89,7 @@ const SidebarData: Array<SidebarData> = [
   {
     id: 2,
     title: "Prize Database",
-    url: "/inventory-database",
+    url: "/prize-database",
     icon: "/images/icon/02.svg",
   },
   {
@@ -106,8 +106,8 @@ const SidebarData: Array<SidebarData> = [
   },
   {
     id: 5,
-    title: "Image Library",
-    url: "/image-library",
+    title: "Prize Image Library",
+    url: "/prize-image-library",
     icon: "/images/icon/05.svg",
   },
   {

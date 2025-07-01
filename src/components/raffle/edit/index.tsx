@@ -62,7 +62,7 @@ const EditRaffle: React.FC = () => {
   return (
     <div>
       <RaffleForm
-        formHeading="Edit Raffle"
+        formHeading="Edit Game"
         initialData={initialData}
         onSubmit={handleUpdate}
       />

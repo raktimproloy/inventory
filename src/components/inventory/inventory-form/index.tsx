@@ -1,4 +1,4 @@
- // ✅ inventory-form.tsx
+// ✅ inventory-form.tsx
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -32,6 +32,9 @@ export interface FormData {
   idRequired: boolean;
   additionalInfo: string;
   thumbnail?: string | null;
+  keywords: string[];
+  sponsor: any;
+  breakEvenValue: number;
 }
 
 interface InventoryFormProps {
@@ -87,9 +90,23 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
 }) => {
   const [files, setFiles] = useState<UploadedFile[]>(initialData?.thumbnail ? [{ url: initialData.thumbnail }] : []);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [openSections, setOpenSections] = useState([true, true, true, true, true]);
+  const [openSections, setOpenSections] = useState([true, true, true, true, true, true]);
   const [pickupRequired, setPickupRequired] = useState<boolean>(false);
   const [idRequired, setIdRequired] = useState<boolean>(false);
+  const [keyword1, setKeyword1] = useState('');
+  const [keyword2, setKeyword2] = useState('');
+  const [keyword3, setKeyword3] = useState('');
+  const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
+  const [sponsorName, setSponsorName] = useState('');
+  const [sponsorImages, setSponsorImages] = useState<File[]>([]);
+  const [sponsors, setSponsors] = useState<any[]>([{
+    name: 'Acme Corp',
+    images: ['/images/logo.png'],
+    id: 1,
+  }]);
+  const [selectedSponsor, setSelectedSponsor] = useState<any | null>(null);
+  const [retailValueUSD, setRetailValueUSD] = useState('');
+  const [breakEvenValue, setBreakEvenValue] = useState(0);
 
   const {
     register,
@@ -112,7 +129,6 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     }
   }, [initialData, reset]);
 
-  // Log all form values to console whenever they change
   useEffect(() => {
     console.log("Form Values:", {
       ...watchedValues,
@@ -122,6 +138,15 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       selectedFiles: selectedFiles.map(f => f.name)
     });
   }, [watchedValues, pickupRequired, idRequired, files, selectedFiles]);
+
+  useEffect(() => {
+    const retail = Number(retailValueUSD) || 0;
+    setBreakEvenValue(retail * 2.5);
+  }, [retailValueUSD]);
+
+  function formatCurrency(value: number) {
+    return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 
   const toggleSection = (idx: number) => {
     setOpenSections((prev) => prev.map((open, i) => (i === idx ? !open : open)));
@@ -144,6 +169,26 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const handleSponsorImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files).slice(0, 2 - sponsorImages.length);
+    setSponsorImages(prev => [...prev, ...files]);
+  };
+
+  const handleAddSponsor = () => {
+    if (!sponsorName || sponsorImages.length === 0) return;
+    const newSponsor = {
+      id: Date.now(),
+      name: sponsorName,
+      images: sponsorImages.map(f => URL.createObjectURL(f)),
+    };
+    setSponsors(prev => [...prev, newSponsor]);
+    setSelectedSponsor(newSponsor);
+    setSponsorModalOpen(false);
+    setSponsorName('');
+    setSponsorImages([]);
+  };
+
   const handleFormSubmit = async (data: any) => {
     try {
       let uploadedUrls: string[] = [];
@@ -151,11 +196,16 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         uploadedUrls = await Promise.all(selectedFiles.map(f => uploadImageToFirebase(f)));
       }
       
-      const formData: FormData = {
+      const formData: FormData & { keywords: string[], sponsor: any, breakEvenValue: number } = {
         ...data,
+        retailValueUSD,
+        keywords: [keyword1, keyword2, keyword3].filter(Boolean),
+        quantityAvailable: Number(data.quantityAvailable),
         pickupRequired,
         idRequired,
         thumbnail: uploadedUrls[0] || files[0]?.url || null,
+        sponsor: selectedSponsor,
+        breakEvenValue,
       };
 
       console.log("Submitting Form Data:", formData);
@@ -166,6 +216,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       setSelectedFiles([]);
       setPickupRequired(false);
       setIdRequired(false);
+      setKeyword1(''); setKeyword2(''); setKeyword3('');
+      setSelectedSponsor(null);
+      setBreakEvenValue(0);
+      setRetailValueUSD('');
     } catch (error) {
       console.error("Form submission error:", error);
     }
@@ -189,55 +243,49 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               {errors.prizeName && <p className="text-red-500 text-sm mt-1">{errors.prizeName.message}</p>}
             </div>
             <div className="form-group">
-              <label htmlFor="shortDescription" className="block text-sm font-medium text-gray-700 mb-1">Short Description*</label>
-              <input 
-                className={`form-control ${errors.shortDescription ? 'border-red-500' : ''}`} 
-                type="text" 
-                id="shortDescription" 
-                placeholder="Enter short description" 
-                {...register("shortDescription")} 
-              />
-              {errors.shortDescription && <p className="text-red-500 text-sm mt-1">{errors.shortDescription.message}</p>}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Short Description - Three (3) Keywords</label>
+              <div className="flex flex-wrap md:flex-nowrap items-center border rounded-lg px-2 py-1 bg-white border-[#00000034] gap-2 w-full">
+                <input
+                  type="text"
+                  className="flex-1 min-w-0 w-full md:w-auto px-2 py-1 outline-none bg-transparent"
+                  placeholder="Keyword 1"
+                  value={keyword1}
+                  onChange={e => setKeyword1(e.target.value)}
+                  maxLength={20}
+                />
+                <span className="mx-2 text-[#00000080] hidden md:inline">|</span>
+                <input
+                  type="text"
+                  className="flex-1 min-w-0 w-full md:w-auto px-2 py-1 outline-none bg-transparent"
+                  placeholder="Keyword 2"
+                  value={keyword2}
+                  onChange={e => setKeyword2(e.target.value)}
+                  maxLength={20}
+                />
+                <span className="mx-2 text-[#00000080] hidden md:inline">|</span>
+                <input
+                  type="text"
+                  className="flex-1 min-w-0 w-full md:w-auto px-2 py-1 outline-none bg-transparent"
+                  placeholder="Keyword 3"
+                  value={keyword3}
+                  onChange={e => setKeyword3(e.target.value)}
+                  maxLength={20}
+                />
+              </div>
+              <span className="text-gray-500 text-xs mt-1 block">Enter up to 3 keywords</span>
             </div>
           </div>
           <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
             <div className="form-group">
-              <label htmlFor="retailValue" className="block text-sm font-medium text-gray-700 mb-1">Retail Value*</label>
-              <input 
-                className={`form-control ${errors.retailValue ? 'border-red-500' : ''}`} 
-                type="number" 
-                id="retailValue" 
-                placeholder="Enter retail value" 
-                {...register("retailValue")} 
-              />
-              {errors.retailValue && <p className="text-red-500 text-sm mt-1">{errors.retailValue.message}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="quantityAvailable" className="block text-sm font-medium text-gray-700 mb-1">Quantity Available*</label>
-              <input 
-                className={`form-control ${errors.quantityAvailable ? 'border-red-500' : ''}`} 
-                type="number" 
-                id="quantityAvailable" 
-                placeholder="Enter quantity" 
-                {...register("quantityAvailable")} 
+              <label htmlFor="quantityAvailable" className="block text-sm font-medium text-gray-700 mb-1">Quantity Item*</label>
+              <input
+                className={`form-control ${errors.quantityAvailable ? 'border-red-500' : ''}`}
+                type="number"
+                id="quantityAvailable"
+                placeholder="Enter quantity"
+                {...register("quantityAvailable")}
               />
               {errors.quantityAvailable && <p className="text-red-500 text-sm mt-1">{errors.quantityAvailable.message}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="partner" className="block text-sm font-medium text-gray-700 mb-1">Partner*</label>
-              <select 
-                id="partner" 
-                className={`form-control ${errors.partner ? 'border-red-500' : ''}`} 
-                {...register("partner")}
-              >
-                <option value="">Select Partner</option>
-                <option value="username1">Fullname1</option>
-                <option value="username2">Fullname2</option>
-                <option value="username3">Fullname3</option>
-                <option value="username4">Fullname4</option>
-                <option value="username5">Fullname5</option>
-              </select>
-              {errors.partner && <p className="text-red-500 text-sm mt-1">{errors.partner.message}</p>}
             </div>
           </div>
           <div className="grid md:grid-cols-1 grid-cols-1 gap-4 md:gap-6">
@@ -254,7 +302,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             </div>
             <div className="form-group col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex gap-4">
             {files.map((file, idx) => (
               <div key={idx} className="form-control relative flex flex-col items-center justify-center">
                 <div className="relative rounded-lg overflow-hidden">
@@ -281,6 +329,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+          <div className="flex flex-wrap gap-4 mt-4">
             {files.length < 4 && (
               <div className="form-control relative flex flex-col items-center justify-center">
                 <div className="absolute left-4 top-[50%] translate-y-[-50%]">
@@ -335,7 +385,108 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
           {errors.tags && <p className="text-red-500 text-sm mt-1">{errors.tags.message}</p>}
         </div>
 
-        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="2. Prize Type & Dynamic Attributes" isOpen={openSections[1]} onClick={() => toggleSection(1)}>
+        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="2. Prize Sponsorship" isOpen={openSections[1]} onClick={() => toggleSection(1)}>
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6">
+            <div className="form-group">
+              <label htmlFor="prizeCategory" className="block text-sm font-medium text-gray-700 mb-1">Select Sponsor Name*</label>
+              <div className="flex gap-2 items-center">
+              <select
+              className="form-control w-full"
+              value={selectedSponsor?.id || ''}
+              onChange={e => {
+                const found = sponsors.find(s => s.id === Number(e.target.value));
+                setSelectedSponsor(found || null);
+              }}
+            >
+              <option value="">Select Sponsor</option>
+              {sponsors.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+                <button
+                  type="button"
+                  className="form-control w-[200px] md:w-[250px] text-left text-gray-500 hover:bg-gray-50 border"
+                  id="addType"
+                  onClick={() => setSponsorModalOpen(true)}
+                >
+                  + Add New Sponsor
+                </button>
+              </div>
+              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory.message}</p>}
+            </div>
+            <div className="form-group">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor Logos*</label>
+              <div className="flex flex-wrap gap-2">
+                {selectedSponsor && selectedSponsor.images.map((img: string, idx: number) => (
+                  <img key={idx} src={img} alt="sponsor logo" className="w-36 h-16 object-contain rounded border" />
+                ))}
+              </div>
+              
+            </div>
+          </div>
+          {/* Custom Modal for Sponsor */}
+          {sponsorModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+              <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-auto p-6 relative">
+                <div className="text-lg font-semibold mb-4">Add New Sponsor</div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Sponsor Name</label>
+                  <input
+                    type="text"
+                    className="form-control w-full"
+                    value={sponsorName}
+                    onChange={e => setSponsorName(e.target.value)}
+                    placeholder="Enter sponsor name"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Sponsor Logo(s) (max 2)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleSponsorImageChange}
+                    className="form-control w-full"
+                    disabled={sponsorImages.length >= 2}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    {sponsorImages.map((file, idx) => (
+                      <div key={idx} className="relative">
+                        <img src={URL.createObjectURL(file)} alt="preview" className="w-12 h-12 object-cover rounded border" />
+                        <button
+                          type="button"
+                          className="absolute -top-2 -right-2 bg-white border border-gray-300 rounded-full px-1 text-xs"
+                          onClick={() => setSponsorImages(prev => prev.filter((_, i) => i !== idx))}
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    type="button"
+                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                    onClick={() => setSponsorModalOpen(false)}
+                  >Cancel</button>
+                  <button
+                    type="button"
+                    className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+                    onClick={handleAddSponsor}
+                    disabled={!sponsorName || sponsorImages.length === 0}
+                  >Add</button>
+                </div>
+                <button
+                  type="button"
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl"
+                  onClick={() => setSponsorModalOpen(false)}
+                  aria-label="Close"
+                >×</button>
+              </div>
+            </div>
+          )}
+        </AccordionSection>
+
+        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="3. Prize Type & Dynamic Attributes" isOpen={openSections[2]} onClick={() => toggleSection(2)}>
           <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6">
             <div className="form-group">
               <label htmlFor="prizeCategory" className="block text-sm font-medium text-gray-700 mb-1">Prize Category*</label>
@@ -368,7 +519,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
           </div>
         </AccordionSection>
 
-        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="3. Fulfillment & Logistics" isOpen={openSections[2]} onClick={() => toggleSection(2)}>
+        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="4. Fulfillment & Logistics" isOpen={openSections[3]} onClick={() => toggleSection(3)}>
           <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6">
             <div className="form-group">
               <label htmlFor="fulfillmentMethod" className="block text-sm font-medium text-gray-700 mb-1">Fulfillment Method*</label>
@@ -452,19 +603,32 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             </div>
             <div className="form-group col-span-2">
               <label htmlFor="retailValueUSD" className="block text-sm font-medium text-gray-700 mb-1">Retail Value (USD)*</label>
-              <input 
-                className={`form-control ${errors.retailValueUSD ? 'border-red-500' : ''}`} 
-                type="text" 
-                id="retailValueUSD" 
-                placeholder="Enter retail value in USD" 
-                {...register("retailValueUSD")}
+              <input
+                className={`form-control ${errors.retailValueUSD ? 'border-red-500' : ''}`}
+                type="text"
+                id="retailValueUSD"
+                placeholder="Enter retail value in USD"
+                value={retailValueUSD}
+                onChange={e => setRetailValueUSD(e.target.value.replace(/[^\d.]/g, ''))}
+                name="retailValueUSD"
               />
               {errors.retailValueUSD && <p className="text-red-500 text-sm mt-1">{errors.retailValueUSD.message}</p>}
+            </div>
+            <div className="form-group">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Break-even Value</label>
+              <input
+                className="form-control bg-gray-100 cursor-not-allowed"
+                type="text"
+                value={formatCurrency(breakEvenValue)}
+                readOnly
+                tabIndex={-1}
+              />
+              <span className="text-gray-400 text-xs mt-1 block">250% of retail value</span>
             </div>
           </div>
         </AccordionSection>
 
-        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="4. Rules & Restrictions" isOpen={openSections[3]} onClick={() => toggleSection(3)}>
+        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="5. Rules & Restrictions" isOpen={openSections[4]} onClick={() => toggleSection(4)}>
           <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6">
             <div className="form-group">
               <label htmlFor="ageRestriction" className="block text-sm font-medium text-gray-700 mb-1">Age Restriction*</label>
@@ -503,7 +667,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
           </div>
         </AccordionSection>
 
-        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="5. Notes" isOpen={openSections[4]} onClick={() => toggleSection(4)}>
+        <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="6. Notes" isOpen={openSections[5]} onClick={() => toggleSection(5)}>
           <div className="grid md:grid-cols-1 grid-cols-1 gap-4 md:gap-6">
             <div className="form-group">
               <label htmlFor="additionalInfo" className="block text-sm font-medium text-gray-700 mb-1">Additional Information</label>

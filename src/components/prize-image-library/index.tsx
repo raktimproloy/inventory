@@ -15,6 +15,8 @@ interface ImageData {
 const ImageLibrary = () => {
     const [images, setImages] = useState<ImageData[]>([]);
     const router = useRouter();
+    const [filterStock, setFilterStock] = useState<string>("All");
+    const [searchTitle, setSearchTitle] = useState<string>("");
 
     const fetchImages = async () => {
         const querySnapshot = await getDocs(collection(db, "image_library"));
@@ -37,35 +39,57 @@ const ImageLibrary = () => {
         fetchImages();
     }, []);
 
+    const filteredImages = images.filter((img) => {
+        const matchesStock = filterStock === "All" || img.stockQuality === filterStock;
+        const matchesTitle = img.title.toLowerCase().includes(searchTitle.toLowerCase());
+        return matchesStock && matchesTitle;
+    });
+
     return (
         <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-[18px] font-semibold text-dark">Image Library</h1>
                 <div className="flex items-center space-x-2">
+                    <input
+                        type="text"
+                        placeholder="Search by title..."
+                        value={searchTitle}
+                        onChange={e => setSearchTitle(e.target.value)}
+                        className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm"
+                    />
+                    <select
+                        value={filterStock}
+                        onChange={e => setFilterStock(e.target.value)}
+                        className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm"
+                    >
+                        <option value="All">All Stock</option>
+                        <option value="Low">Low</option>
+                        <option value="High">High</option>
+                    </select>
                     <button className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
                         <svg width="20" viewBox="0 0 20 20">
                             <use href="/images/sprite.svg#svg-filter"></use>
                         </svg>
                         <span>Filter</span>
                     </button>
-                    <Link href="/image-library/add" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">+ Add New</Link>
+                    {/* <Link href="/prize-image-library/add" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">+ Add New</Link> */}
                 </div>
             </div>
             <div className="grid xl:grid-cols-6 lg:grid-cols-4 grid-cols-3 gap-6">
-                {images.map((img) => (
+                {filteredImages.map((img) => (
                     <div className="bg-transparent overflow-hidden group" key={img.id}>
                         <div className="relative">
                             <img src={img.imageUrl} alt={img.title} className="h-[150px] w-full rounded-t-xl" />
                             <div className="top-3 absolute transition-all duration-300 left-3 z-10 opacity-0 group-hover:opacity-100">
                                 <button
                                     className="mb-2 flex items-center h-8 w-8 rounded-full p-2 bg-primary"
-                                    onClick={() => router.push(`/image-library/view/${img.id}`)}
+                                    onClick={() => router.push(`/prize-image-library/view/${img.id}`)}
                                 >
                                     <img src="/images/icon/eye1.svg" alt="icon" className="brightness-[100]" />
                                 </button>
                                 <button
                                     className="mb-2 flex items-center h-8 w-8 rounded-full p-2 bg-primary"
-                                    onClick={() => router.push(`/image-library/edit/${img.id}`)}
+                                    onClick={() => router.push(`/prize-image-library/edit/${img.id}`)}
                                 >
                                     <img src="/images/icon/edit1.svg" alt="icon" className="brightness-[100]" />
                                 </button>
@@ -100,7 +124,7 @@ const ImageLibrary = () => {
                     </div>
                 ))}
             </div>
-            {images.length === 0 && (
+            {filteredImages.length === 0 && (
                 <p className="text-center">No images found.</p>
             )}
 

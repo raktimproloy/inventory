@@ -1,4 +1,4 @@
-import ImageLibrary from "@/components/image-library";
+import ImageLibrary from "@/components/prize-image-library";
 import ChsHead from "@/components/layouts/ChsHead";
 import PrivateRoute from "@/routes/PrivetRoute";
 
