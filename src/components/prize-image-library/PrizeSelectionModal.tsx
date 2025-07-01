@@ -133,7 +133,7 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
           )}
         </div>
         {/* Keyword fields */}
-        {selectedPrize && (
+        {/* {selectedPrize && (
           <div className="px-6 py-4 border-t border-[#E4E7EC] bg-gray-50">
             <div className="mb-2 font-medium text-gray-700">Keywords</div>
             <div className="flex gap-2">
@@ -152,22 +152,24 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                 />
               ))}
             </div>
-            <button
+            
+          </div>
+        )} */}
+        {/* Footer */}
+        <div className="flex justify-end p-6 border-t border-[#E4E7EC] bg-gray-50">
+        <button
+            onClick={onClose}
+            className=" px-4 py-3 text-dark border border-[#E4E7EC] rounded-lg hover:bg-gray-50 transition-colors font-medium mt-4 mr-4"
+          >
+            Cancel
+          </button>
+        <button
               className="mt-4 px-4 py-2 bg-primary text-white rounded"
               onClick={handleConfirm}
             >
               Confirm Selection
             </button>
-          </div>
-        )}
-        {/* Footer */}
-        <div className="flex justify-end p-6 border-t border-[#E4E7EC] bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-6 py-3 text-dark border border-[#E4E7EC] rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancel
-          </button>
+          
         </div>
       </div>
     </div>

@@ -83,13 +83,13 @@ const ImageLibrary = () => {
                             <div className="top-3 absolute transition-all duration-300 left-3 z-10 opacity-0 group-hover:opacity-100">
                                 <button
                                     className="mb-2 flex items-center h-8 w-8 rounded-full p-2 bg-primary"
-                                    onClick={() => router.push(`/prize-image-library/view/${img.id}`)}
+                                    onClick={() => router.push(`/prize-database/inventory-view/${"4W6FzXGv2PX5wuZSyyYD"}`)}
                                 >
                                     <img src="/images/icon/eye1.svg" alt="icon" className="brightness-[100]" />
                                 </button>
                                 <button
                                     className="mb-2 flex items-center h-8 w-8 rounded-full p-2 bg-primary"
-                                    onClick={() => router.push(`/prize-image-library/edit/${img.id}`)}
+                                    onClick={() => router.push(`/prize-database/${"4W6FzXGv2PX5wuZSyyYD"}`)}
                                 >
                                     <img src="/images/icon/edit1.svg" alt="icon" className="brightness-[100]" />
                                 </button>
