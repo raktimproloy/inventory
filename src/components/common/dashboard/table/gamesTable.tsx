@@ -37,7 +37,7 @@ const countDown = [
           "nanoseconds": 0
       },
       expiryDate: {
-          "seconds": Math.floor(new Date('2025-06-24').getTime() / 1000), // Ends June 24, 2025 (3 days later)
+          "seconds": Math.floor(new Date('2025-07-24').getTime() / 1000), // Ends June 24, 2025 (3 days later)
           "nanoseconds": 0
       }
   },
@@ -47,17 +47,17 @@ const countDown = [
           "nanoseconds": 0
       },
       expiryDate: {
-          "seconds": Math.floor(new Date('2025-06-20').getTime() / 1000), // Ends June 20, 2025
+          "seconds": Math.floor(new Date('2025-08-20').getTime() / 1000), // Ends June 20, 2025
           "nanoseconds": 0
       }
   },
   {
       createdAt: {
-          "seconds": Math.floor(new Date('2025-06-18').getTime() / 1000), // Started June 18, 2025 (Live)
+          "seconds": Math.floor(new Date('2025-07-13').getTime() / 1000), // Started June 18, 2025 (Live)
           "nanoseconds": 0
       },
       expiryDate: {
-          "seconds": Math.floor(new Date('2025-06-19').getTime() / 1000), // Ends June 19, 2025
+          "seconds": Math.floor(new Date('2025-08-10').getTime() / 1000), // Ends June 19, 2025
           "nanoseconds": 0
       }
   },
