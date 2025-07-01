@@ -145,7 +145,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
   const [isPrizeModalOpen, setIsPrizeModalOpen] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<any>(null);
-  const [prizeKeywords, setPrizeKeywords] = useState(["", "", ""]);
+  const [prizeKeywords, setPrizeKeywords] = useState<string[]>([]);
   const [actionModal, setActionModal] = useState<{ type: 'extend' | 'refund' | 'endEarly' | null, open: boolean }>({ type: null, open: false });
   const [extendDate, setExtendDate] = useState("");
 
@@ -345,22 +345,16 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                 />
               </div>
               {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
-              {/* 3 keyword fields */}
-              <div className="flex gap-2 mt-2">
-                {prizeKeywords.map((kw, idx) => (
-                  <input
+              {/* 3 keyword fields (now display-only) */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                { prizeKeywords && prizeKeywords.length > 0 && prizeKeywords.map((kw: string, idx: number) => (
+                  <span
                     key={idx}
-                    type="text"
-                    className={`form-control flex-1${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
-                    value={kw}
-                    onChange={e => {
-                      const newKeywords = [...prizeKeywords];
-                      newKeywords[idx] = e.target.value;
-                      setPrizeKeywords(newKeywords);
-                    }}
-                    placeholder={`Keyword ${idx + 1}`}
-                    disabled={isLive}
-                  />
+                    className="inline-block bg-primary/10 text-primary text-xs font-medium px-3 py-1 rounded-full border border-primary/20 max-w-full truncate"
+                    title={kw}
+                  >
+                    {kw}
+                  </span>
                 ))}
               </div>
               <button
