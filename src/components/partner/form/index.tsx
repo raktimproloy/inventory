@@ -276,7 +276,7 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit, initialData 
                 </div>
               ) : (
                 <Image
-                  src="/images/thumb.png"
+                  src={ formHeading === "Edit Partner" ? "/images/laptop.webp" : "/images/thumb.png"}
                   alt="Default Thumbnail"
                   height={80}
                   width={135}
