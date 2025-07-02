@@ -397,7 +397,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                     </div>
                   ) : (
                     <Image
-                      src="/images/thumb.png"
+                      src={formHeading.includes("Edit") ? "/images/laptop.webp" : "/images/thumb.png"}
                       alt="photo"
                       height={80}
                       width={135}

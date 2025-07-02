@@ -28,6 +28,7 @@ const ViewInventory: React.FC = () => {
         setIsLoading(false);
       }
     };
+
   if (isLoading) return
     <div className="border border-[rgb(208,213,221)] rounded-xl p-6 bg-white w-full">
       <p>Loading...</p>
@@ -55,12 +56,12 @@ const ViewInventory: React.FC = () => {
           <p className="text-sm text-dark">${inventoryItem.price}</p>
         </div>
         <div className="form-group">
-          <label>Partner</label>
+          <label>Sponser</label>
           <p className="text-sm text-dark">{inventoryItem.partner}</p>
         </div>
         <div className="form-group">
           <label>Stock Level</label>
-          <p className="text-sm text-dark">{inventoryItem.stockLevel}%</p>
+          <p className="text-sm text-dark">{inventoryItem.stockLevel}</p>
         </div>
         <div className="form-group">
           <label>Status</label>
@@ -68,9 +69,13 @@ const ViewInventory: React.FC = () => {
         </div>
         <div className="form-group">
           <label>Prize Image</label>
-          {inventoryItem.thumbnail && (
+          {inventoryItem.thumbnail ? (
             <Image src={inventoryItem.thumbnail} alt={inventoryItem.prizeName} width={150} height={100} />
-          )}
+          ) :
+          (
+            <Image src={"/images/laptop.webp"} alt={inventoryItem.prizeName} width={150} height={100} />
+          )
+        }
         </div>
       </div>
     </div>

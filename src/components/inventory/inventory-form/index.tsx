@@ -88,7 +88,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
   initialData,
   onSubmit,
 }) => {
-  const [files, setFiles] = useState<UploadedFile[]>(initialData?.thumbnail ? [{ url: initialData.thumbnail }] : []);
+  const [files, setFiles] = useState<UploadedFile[]>(initialData?.thumbnail ? [{ url: initialData.thumbnail }] : [{url: "/images/laptop.webp"}]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [openSections, setOpenSections] = useState([true, true, true, true, true, true]);
   const [pickupRequired, setPickupRequired] = useState<boolean>(false);

@@ -82,14 +82,23 @@ const formatDate = (date: Timestamp | Date | string) => {
         </div>
         <div className="form-group md:col-span-2">
           <label>Game Image</label>
-          {raffles.picture && (
+          {raffles.picture ? (
             <Image
               src={raffles.picture}
               alt={raffles.description}
               width={150}
               height={100}
             />
-          )}
+          ) :
+          (
+            <Image
+              src={"/images/laptop.webp"}
+              alt={raffles.description}
+              width={150}
+              height={100}
+            />
+          )
+          }
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 
 const InventoryList: React.FC = () => {
   const [inventoryData, setInventoryData] = useState<any[]>([]);
-
+  console.log(inventoryData)
   useEffect(() => {
     getAllInventory();
   }, []);
