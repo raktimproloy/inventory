@@ -9,6 +9,7 @@ interface PrizeData {
   remainingQuantity: number;
   stockQuality: string;
   imageUrl: string;
+  sponsor?: string;
   keywords?: string[];
 }
 
@@ -24,6 +25,24 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPrize, setSelectedPrize] = useState<PrizeData | null>(null);
   const [keywords, setKeywords] = useState(["", "", ""]);
+  const [filterSponsorName, setFilterSponsorName] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filterSponsor, setFilterSponsor] = useState("");
+  const [filterStock, setFilterStock] = useState("All");
+  const [showFilterSection, setShowFilterSection] = useState(false);
+
+  const sponsorList = [
+    { id: "1", name: "Nike" },
+    { id: "2", name: "Adidas" },
+    { id: "3", name: "Coca-Cola" },
+    { id: "4", name: "Pepsi" },
+    { id: "5", name: "Samsung" },
+    { id: "6", name: "Apple" },
+    { id: "7", name: "Toyota" },
+    { id: "8", name: "Sony" },
+    { id: "9", name: "Red Bull" },
+    { id: "10", name: "Visa" },
+  ];
 
   useEffect(() => {
     if (isOpen) {
@@ -35,10 +54,14 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
     setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, 'image_library'));
-      const prizeList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<PrizeData, 'id'>),
-      }));
+      const prizeList = querySnapshot.docs.map((doc, idx) => {
+        const sponsorName = sponsorList[idx % sponsorList.length].name;
+        return {
+          id: doc.id,
+          ...(doc.data() as Omit<PrizeData, 'id'>),
+          sponsor: sponsorName,
+        };
+      });
       setPrizes(prizeList);
     } catch (error) {
       console.error('Error fetching prizes:', error);
@@ -47,9 +70,14 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
     }
   };
 
-  const filteredPrizes = prizes.filter(prize =>
-    prize.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPrizes = prizes.filter((prize) => {
+    const matchesSponsorName = filterSponsorName === "" || (prize.sponsor && prize.sponsor.toLowerCase().includes(filterSponsorName.toLowerCase()));
+    const matchesStatus = filterStatus === "All" || (filterStatus === "Active" ? prize.remainingQuantity > 0 : prize.remainingQuantity === 0);
+    const matchesSponsor = filterSponsor === "" || prize.sponsor === filterSponsor;
+    const matchesStock = filterStock === "All" || prize.stockQuality === filterStock;
+    const matchesTitle = prize.title.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSponsorName && matchesStatus && matchesSponsor && matchesStock && matchesTitle;
+  });
 
   const handlePrizeClick = (prize: PrizeData) => {
     setSelectedPrize(prize);
@@ -83,15 +111,68 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
             </svg>
           </button>
         </div>
-        {/* Search */}
-        <div className="px-6 py-4 border-b border-[#E4E7EC] bg-gray-50">
-          <input
-            type="text"
-            placeholder="Search prizes by title..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-4 pr-4 py-3 border border-[#D0D5DD] rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white"
-          />
+        {/* Filter Section */}
+        <div className="px-6 py-4 border-b border-[#E4E7EC] bg-gray-50 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              placeholder="Search by sponsor name..."
+              value={filterSponsorName}
+              onChange={e => setFilterSponsorName(e.target.value)}
+              className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
+            />
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
+            >
+              <option value="All">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              value={filterSponsor}
+              onChange={e => setFilterSponsor(e.target.value)}
+              className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
+            >
+              <option value="">All Sponsors</option>
+              {sponsorList.map(s => (
+                <option key={s.id} value={s.name}>{s.name}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Search by title..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              value={filterStock}
+              onChange={e => setFilterStock(e.target.value)}
+              className="px-3 py-0 border border-[#E4E7EC] rounded-lg text-sm w-full"
+            >
+              <option value="All">All Stock</option>
+              <option value="Low">Low</option>
+              <option value="High">High</option>
+            </select>
+            <button
+              className="px-4 bg-red-500 text-white py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium w-full sm:w-auto"
+              onClick={() => {
+                setFilterSponsorName("");
+                setFilterStatus("All");
+                setFilterSponsor("");
+                setSearchTerm("");
+                setFilterStock("All");
+              }}
+            >
+              Clear
+            </button>
+          </div>
         </div>
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[40vh] bg-white">
@@ -111,6 +192,12 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                   onClick={() => handlePrizeClick(prize)}
                 >
                   <div className="relative">
+                    {/* Sponsor badge */}
+                    {prize.sponsor && (
+                      <span className="absolute right-2 top-2 z-10 bg-blue-100 text-blue-700 border border-blue-300 rounded-full px-1 py-[.75px] text-[11px] font-medium shadow">
+                        {prize.sponsor}
+                      </span>
+                    )}
                     <img
                       src={prize.imageUrl}
                       alt={prize.title}
@@ -157,19 +244,18 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
         )} */}
         {/* Footer */}
         <div className="flex justify-end p-6 border-t border-[#E4E7EC] bg-gray-50">
-        <button
+          <button
             onClick={onClose}
             className=" px-4 py-3 text-dark border border-[#E4E7EC] rounded-lg hover:bg-gray-50 transition-colors font-medium mt-4 mr-4"
           >
             Cancel
           </button>
-        <button
-              className="mt-4 px-4 py-2 bg-primary text-white rounded"
-              onClick={handleConfirm}
-            >
-              Confirm Selection
-            </button>
-          
+          <button
+            className="mt-4 px-4 py-2 bg-primary text-white rounded"
+            onClick={handleConfirm}
+          >
+            Confirm Selection
+          </button>
         </div>
       </div>
     </div>
