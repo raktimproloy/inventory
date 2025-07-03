@@ -56,7 +56,7 @@ const ViewInventory: React.FC = () => {
           <p className="text-sm text-dark">${inventoryItem.price}</p>
         </div>
         <div className="form-group">
-          <label>Sponser</label>
+          <label>Sponsor</label>
           <p className="text-sm text-dark">{inventoryItem.partner}</p>
         </div>
         <div className="form-group">
