@@ -101,7 +101,7 @@ const SponsorViewPage = () => {
                                     </td>
                                     <td className="text-sm text-gray py-3 px-6 text-center">
                                         <button
-                                            className="px-4 py-2 bg-primary text-white rounded text-xs font-medium hover:bg-primary-dark"
+                                            className="px-4 py-2 bg-primary text-white rounded-full text-xs font-medium hover:bg-primary-dark"
                                             onClick={() => handleCreateGame(item.id)}
                                         >
                                             Create Game
@@ -111,7 +111,7 @@ const SponsorViewPage = () => {
                                         <span
                                             className={`px-3 py-1 rounded-full text-xs font-medium border ${item.status === 'Active' ? 'border-[#D0D5DD] text-[#067647]' : 'border-primary text-primary'}`}
                                         >
-                                            {item.status}
+                                            {item.status || "Inactive"}
                                         </span>
                                     </td>
                                     <td className="text-sm text-gray py-3 px-6 text-center">

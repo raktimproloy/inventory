@@ -35,7 +35,22 @@ const InventoryList: React.FC = () => {
         stockLevel: item.quantityAvailable || 0,
         status: item.status || 'Inactive',
         thumbnail: item.thumbnail || '',
+        createdAt: item.createdAt || null,
       }));
+      // Sort by createdAt (latest first) if createdAt exists
+      transformed.sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+          // Firestore Timestamp object: use .toDate() or .seconds
+          const aTime = a.createdAt.seconds ? a.createdAt.seconds : new Date(a.createdAt).getTime();
+          const bTime = b.createdAt.seconds ? b.createdAt.seconds : new Date(b.createdAt).getTime();
+          return bTime - aTime;
+        }
+        // If only one has createdAt, keep the one with createdAt first
+        if (a.createdAt) return -1;
+        if (b.createdAt) return 1;
+        // If neither has createdAt, keep original order
+        return 0;
+      });
       setInventoryData(transformed);
     } catch (error) {
       console.error("Error fetching inventory data:", error);

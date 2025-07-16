@@ -152,7 +152,7 @@ const AddImagePage = () => {
 
     return (
         <div className="border border-[#D0D5DD] rounded-xl p-4 md:p-6 bg-white w-full max-w-4xl mx-auto">
-            <h1 className="text-[18px] md:text-[24px] font-semibold text-dark mb-6 md:mb-8">Add Item Stock</h1>
+            <h1 className="text-[18px] md:text-[24px] font-semibold text-dark mb-6 md:mb-8">Add Game Image</h1>
             
             {submitError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">

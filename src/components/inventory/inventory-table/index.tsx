@@ -135,11 +135,11 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
  console.log(inventoryDataList)
   // Filter dropdown UI
   const renderFilterDropdown = (
-    <div className="absolute left-[-100%] top-[100%] mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+    <div className="absolute left-[-100%] top-[100%] mt-2 w-80 bg-white border rounded-lg shadow-lg z-50 p-4">
       <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor</label>
         <select
-          className="w-full border border-gray-300 rounded px-2 py-1"
+          className="w-full border rounded px-2 py-1"
           value={filter.sponsor}
           onChange={e => setFilter(f => ({ ...f, sponsor: e.target.value }))}
         >
@@ -152,7 +152,7 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
       <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
         <select
-          className="w-full border border-gray-300 rounded px-2 py-1"
+          className="w-full border rounded px-2 py-1"
           value={filter.status}
           onChange={e => setFilter(f => ({ ...f, status: e.target.value }))}
         >
@@ -165,7 +165,7 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
         <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
         <input
           type="text"
-          className="w-full border border-gray-300 rounded px-2 py-1"
+          className="w-full border rounded px-2 py-1"
           placeholder="Prize name or keywords"
           value={filter.search}
           onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}

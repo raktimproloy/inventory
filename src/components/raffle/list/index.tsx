@@ -4,33 +4,43 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../../../config/firebase.config";
 import { deleteData } from "../../../../utility";
 import { toast } from "react-toastify";
+import { fetchUsers } from "../../../../utility"; // <-- import this
 
-interface RaffleListProps {}
-
-const RaffleList: React.FC<RaffleListProps> = () => {
+const RaffleList: React.FC = () => {
   const [raffleData, setRaffleData] = useState<any[]>([]);
+  const [prizeMap, setPrizeMap] = useState<Record<string, any>>({});
 
-  // Fetch raffle data from Firestore
   useEffect(() => {
-    const fetchRaffles = async () => {
+    const fetchAll = async () => {
       try {
+        // Fetch all prizes
+        const prizes = await fetchUsers("prize_database");
+        // Create a map for quick lookup
+        const prizeMap: Record<string, any> = {};
+        prizes.forEach((prize: any) => {
+          prizeMap[prize.id] = prize;
+        });
+        setPrizeMap(prizeMap);
+
+        // Fetch all raffles
         const querySnapshot = await getDocs(collection(db, "raffles"));
         const data: any[] = [];
-
         querySnapshot.forEach((doc) => {
-          data.push({
-            id: doc.id,
-            ...doc.data(),
-          });
+          const raffle: any = { id: doc.id, ...doc.data() };
+          // Attach prize details if prizeId exists
+          if (raffle.prizeId && prizeMap[raffle.prizeId]) {
+            raffle.prizeName = prizeMap[raffle.prizeId].prizeName;
+            raffle.prizeImage = prizeMap[raffle.prizeId].thumbnail;
+          }
+          data.push(raffle);
         });
-
         setRaffleData(data);
       } catch (error) {
-        console.error("Error fetching raffles:", error);
+        console.error("Error fetching raffles or prizes:", error);
       }
     };
 
-    fetchRaffles();
+    fetchAll();
   }, []);
 
   const handleDelete = async (id: any) => {

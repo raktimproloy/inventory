@@ -53,7 +53,15 @@ const SponsorGrid: React.FC = () => {
 
   return (
     <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
-      <h1 className="text-[18px] font-semibold text-dark mb-8">Sponsor Library</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-[18px] font-semibold text-dark">Sponsor Library</h1>
+        <button className="inline-flex items-center gap-2 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
+          <svg width="20" viewBox="0 0 20 20">
+            <use href="/images/sprite.svg#svg-filter"></use>
+          </svg>
+          <span>Filter</span>
+        </button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {sponsors.map((sponsor) => (
           <div
@@ -64,12 +72,12 @@ const SponsorGrid: React.FC = () => {
 
             {/* Thumbnail */}
             <div
-              className="w-[100%] h-[100%] rounded bg-white border border-[#E4E7EC] flex items-center justify-center mb-4 cursor-pointer relative"
+              className="w-[100%] h-[100%] rounded-t-xl bg-white border-2 border-gray-500 flex items-center justify-center mb-4 cursor-pointer relative"
               style={{ marginTop: '8px', marginBottom: '18px' }}
               title="View Sponsor"
             >
               {sponsor.logo && sponsor.logo[0] ? (
-                <Image src={sponsor.logo[0]} alt={sponsor.sponsorName} width={1000} height={1000} className="object-contain max-h-[60%] max-w-[100%]" onClick={() => handleThumbnailClick(sponsor.id)} />
+                <Image src={sponsor.logo[0]} alt={sponsor.sponsorName} width={1000} height={1000} className="object-contain max-h-[100%] max-w-[100%]" onClick={() => handleThumbnailClick(sponsor.id)} />
               ) : (
                 <span className="text-gray-400 text-2xl">?</span>
               )}

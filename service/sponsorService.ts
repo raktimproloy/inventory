@@ -29,6 +29,7 @@ export const addSponsor = async (sponsorName: string, logoFiles: File[]): Promis
     logo: logoUrls,
     gamesCreation: [],
     prizesCreation: [],
+    status: "Active"
   };
   const sponsorCollection = collection(db, "sponsors");
   const docRef = await addDoc(sponsorCollection, sponsorData);
@@ -39,7 +40,9 @@ export const addSponsor = async (sponsorName: string, logoFiles: File[]): Promis
 export const getSponsors = async (): Promise<Sponsor[]> => {
   const sponsorCollection = collection(db, "sponsors");
   const snapshot = await getDocs(sponsorCollection);
-  return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })) as Sponsor[];
+  return snapshot.docs
+    .map(docSnap => ({ ...(docSnap.data() as Sponsor & { status?: string }), id: docSnap.id }))
+    .filter(sponsor => sponsor.status === "Active") as Sponsor[];
 };
 
 // Add a prize/game ID to a sponsor's gamesCreation array

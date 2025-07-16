@@ -48,7 +48,7 @@ interface RaffleFormProps {
 
 const validationSchema = yup.object().shape({
   title: yup.string().required("Title is required").min(3, "Title must be at least 3 characters"),
-  description: yup.string().required("Prize description is required").min(5, "Prize description must be at least 5 characters"),
+  description: yup.string().required("Prize description is required"),
   ticketPrice: yup.number().typeError("Ticket price must be a number").required("Ticket price is required").positive("Ticket price must be positive"),
   category: yup.string().required("Category is required"),
   gameDescription: yup.string().required("Game description is required").min(10, "Game description must be at least 10 characters"),
@@ -314,6 +314,17 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
 
   return (
     <>
+      {isSubmitting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="flex flex-col items-center">
+            <svg className="animate-spin h-10 w-10 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+            </svg>
+            <span className="text-white text-lg font-semibold">Saving...</span>
+          </div>
+        </div>
+      )}
       <div className="border border-[#D0D5DD] rounded-xl p-4 md:p-6 bg-white w-full mx-auto">
         <h2 className="text-[18px] md:text-[24px] font-semibold text-dark mb-6 md:mb-8">{formHeading}</h2>
         
@@ -346,7 +357,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="text"
                   id="description"
                   placeholder="Select prize from library"
-                  value={selectedPrize ? selectedPrize.title : watchedValues.description}
+                  value={selectedPrize ? selectedPrize.prizeName : watchedValues.description}
                   readOnly
                   onClick={() => !isLive ? setIsPrizeModalOpen(true) : null}
                   style={{ cursor: isLive ? 'not-allowed' : 'pointer' }}
@@ -566,8 +577,11 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             <button
               type="submit"
               className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
+              disabled={isSubmitting}
             >
-              Save
+              {isSubmitting ? (
+                <span className="flex items-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Saving...</span>
+              ) : 'Save'}
             </button>
           </div>
         </form>

@@ -17,6 +17,8 @@ interface RaffleTableProps {
   createdAt: string;
   expiryDate: string;
   status: string;
+  prizeImage?: string;
+  prizeName?: string;
 }
 
 interface RaffleTablePropsWithHeading {
@@ -178,8 +180,8 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
                         <Image
                           src={item.picture || '/images/laptop.webp'}
                           loading="lazy"
-                          height={40}
-                          width={40}
+                          height={500}
+                          width={500}
                           quality={100}
                           alt={item.title}
                           className="object-cover h-10"
@@ -192,16 +194,18 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
                     <div className="flex items-center gap-3">
                       <span className="h-10 w-10 min-w-10 bg-white rounded-full border border-[#D0D5DD] overflow-hidden">
                         <Image
-                          src={item.editedGamePicture || '/images/laptop.webp'}
+                          src={item.prizeImage || item.editedGamePicture || '/images/laptop.webp'}
                           loading="lazy"
-                          height={40}
-                          width={40}
+                          height={500}
+                          width={500}
                           quality={100}
-                          alt={item.description}
+                          alt={item.prizeName || item.description}
                           className="object-cover h-10"
                         />
                       </span>
-                      <span className="text-dark font-medium text-sm">{limitWords(item.description)}</span>
+                      <span className="text-dark font-medium text-sm">
+                        {item.prizeName || "N/A"}
+                      </span>
                     </div>
                   </td>
                   <td className="text-sm text-gray py-3 px-6">{formatDate(item.createdAt)}</td>
