@@ -60,9 +60,9 @@ const SponsorViewPage = () => {
                                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Key Details</th>
                                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Price</th>
                                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Stock Level</th>
+                                <th className="text-[12px] font-medium text-gray border-0 py-3 px-6 text-center">Game</th>
                                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Status</th>
                                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6 text-center">Action</th>
-                                <th className="text-[12px] font-medium text-gray border-0 py-3 px-6 text-center">Create Game</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -99,6 +99,14 @@ const SponsorViewPage = () => {
                                             <span className="text-gray-700 text-sm">{item.quantityAvailable || 0}</span>
                                         </div>
                                     </td>
+                                    <td className="text-sm text-gray py-3 px-6 text-center">
+                                        <button
+                                            className="px-4 py-2 bg-primary text-white rounded text-xs font-medium hover:bg-primary-dark"
+                                            onClick={() => handleCreateGame(item.id)}
+                                        >
+                                            Create Game
+                                        </button>
+                                    </td>
                                     <td className="text-sm text-gray py-3 px-6">
                                         <span
                                             className={`px-3 py-1 rounded-full text-xs font-medium border ${item.status === 'Active' ? 'border-[#D0D5DD] text-[#067647]' : 'border-primary text-primary'}`}
@@ -117,14 +125,7 @@ const SponsorViewPage = () => {
                                             ]}
                                         />
                                     </td>
-                                    <td className="text-sm text-gray py-3 px-6 text-center">
-                                        <button
-                                            className="px-4 py-2 bg-primary text-white rounded text-xs font-medium hover:bg-primary-dark"
-                                            onClick={() => handleCreateGame(item.id)}
-                                        >
-                                            Create Game
-                                        </button>
-                                    </td>
+                                    
                                 </tr>
                             ))}
                         </tbody>
