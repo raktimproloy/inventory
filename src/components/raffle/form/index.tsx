@@ -145,6 +145,8 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false);
   const [isPrizeModalOpen, setIsPrizeModalOpen] = useState(false);
   const [selectedPrize, setSelectedPrize] = useState<any>(null);
+  const [selectedPrizeId, setSelectedPrizeId] = useState<string | null>(null);
+  const [selectedPrizePrice, setSelectedPrizePrice] = useState<string | null>(null);
   const [prizeKeywords, setPrizeKeywords] = useState<string[]>([]);
   const [actionModal, setActionModal] = useState<{ type: 'extend' | 'refund' | 'endEarly' | null, open: boolean }>({ type: null, open: false });
   const [extendDate, setExtendDate] = useState("");
@@ -201,7 +203,9 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
 
   const handlePrizeSelect = (prize: any) => {
     setSelectedPrize(prize);
-    setValue("description", prize.title);
+    setSelectedPrizeId(prize.id);
+    setSelectedPrizePrice(prize.retailValueUSD);
+    setValue("description", prize.prizeName);
     // Try to get keywords from prize, else use dummy
     if (prize.keywords && Array.isArray(prize.keywords) && prize.keywords.length) {
       setPrizeKeywords([
@@ -226,11 +230,13 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
       console.log("Raw Form Data:", data);
       console.log("File:", file?.url);
 
-      const formData: FormData = {
+      const formData: FormData & { prizeId?: string; ticketPrice?: string } = {
         ...data,
         picture: file?.url || "",
         createdAt: new Date(data.createdAt).toISOString(),
         expiryDate: new Date(data.expiryDate).toISOString(),
+        prizeId: selectedPrizeId || undefined,
+        ticketPrice: selectedPrizePrice || undefined,
       };
 
       console.log("=== FINAL FORM DATA TO SUBMIT ===");
@@ -248,6 +254,9 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
 
       reset();
       setFile(null);
+      setSelectedPrize(null);
+      setSelectedPrizeId(null);
+      setSelectedPrizePrice(null);
       
       if (onSubmit) {
         onSubmit(formData);

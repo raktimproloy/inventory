@@ -7,6 +7,7 @@ export interface Sponsor {
   sponsorName: string;
   logo: string[]; // Array of Firebase Storage URLs (max 2)
   gamesCreation: string[]; // Array of prize/game IDs
+  prizesCreation: string[]; // Array of prize/game IDs
 }
 
 // Upload sponsor images to Firebase Storage and return their URLs
@@ -27,6 +28,7 @@ export const addSponsor = async (sponsorName: string, logoFiles: File[]): Promis
     sponsorName,
     logo: logoUrls,
     gamesCreation: [],
+    prizesCreation: [],
   };
   const sponsorCollection = collection(db, "sponsors");
   const docRef = await addDoc(sponsorCollection, sponsorData);
@@ -44,6 +46,6 @@ export const getSponsors = async (): Promise<Sponsor[]> => {
 export const addGameToSponsor = async (sponsorId: string, gameId: string): Promise<void> => {
   const sponsorDoc = doc(db, "sponsors", sponsorId);
   await updateDoc(sponsorDoc, {
-    gamesCreation: arrayUnion(gameId),
+    prizesCreation: arrayUnion(gameId),
   });
 }; 

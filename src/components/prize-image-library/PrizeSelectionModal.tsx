@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../../config/firebase.config';
+import { getSponsors, Sponsor } from '../../../service/sponsorService';
 
 interface PrizeData {
   id: string;
-  title: string;
-  remainingQuantity: number;
-  stockQuality: string;
-  imageUrl: string;
-  sponsor?: string;
+  prizeName: string;
+  retailValueUSD: string;
+  quantityAvailable: number;
+  status: string;
+  thumbnail?: string;
   keywords?: string[];
+  sponsorId?: string;
+  sponsorName?: string;
 }
 
 interface PrizeSelectionModalProps {
@@ -21,62 +24,52 @@ interface PrizeSelectionModalProps {
 
 const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClose, onSelectPrize }) => {
   const [prizes, setPrizes] = useState<PrizeData[]>([]);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchPrice, setSearchPrice] = useState('');
   const [selectedPrize, setSelectedPrize] = useState<PrizeData | null>(null);
   const [keywords, setKeywords] = useState(["", "", ""]);
-  const [filterSponsorName, setFilterSponsorName] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterSponsor, setFilterSponsor] = useState("");
-  const [filterStock, setFilterStock] = useState("All");
-  const [showFilterSection, setShowFilterSection] = useState(false);
-
-  const sponsorList = [
-    { id: "1", name: "Nike" },
-    { id: "2", name: "Adidas" },
-    { id: "3", name: "Coca-Cola" },
-    { id: "4", name: "Pepsi" },
-    { id: "5", name: "Samsung" },
-    { id: "6", name: "Apple" },
-    { id: "7", name: "Toyota" },
-    { id: "8", name: "Sony" },
-    { id: "9", name: "Red Bull" },
-    { id: "10", name: "Visa" },
-  ];
 
   useEffect(() => {
     if (isOpen) {
-      fetchPrizes();
+      fetchData();
     }
   }, [isOpen]);
 
-  const fetchPrizes = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, 'image_library'));
-      const prizeList = querySnapshot.docs.map((doc, idx) => {
-        const sponsorName = sponsorList[idx % sponsorList.length].name;
+      // Fetch sponsors
+      const sponsorList = await getSponsors();
+      setSponsors(sponsorList);
+      // Fetch prizes
+      const querySnapshot = await getDocs(collection(db, 'prize_database'));
+      const prizeList = querySnapshot.docs.map((doc) => {
+        const data = doc.data() as PrizeData;
+        const sponsor = sponsorList.find((s: Sponsor) => s.id === data.sponsorId);
         return {
+          ...data,
           id: doc.id,
-          ...(doc.data() as Omit<PrizeData, 'id'>),
-          sponsor: sponsorName,
+          sponsorName: sponsor ? sponsor.sponsorName : '',
         };
       });
       setPrizes(prizeList);
     } catch (error) {
-      console.error('Error fetching prizes:', error);
+      console.error('Error fetching prizes or sponsors:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredPrizes = prizes.filter((prize) => {
-    const matchesSponsorName = filterSponsorName === "" || (prize.sponsor && prize.sponsor.toLowerCase().includes(filterSponsorName.toLowerCase()));
-    const matchesStatus = filterStatus === "All" || (filterStatus === "Active" ? prize.remainingQuantity > 0 : prize.remainingQuantity === 0);
-    const matchesSponsor = filterSponsor === "" || prize.sponsor === filterSponsor;
-    const matchesStock = filterStock === "All" || prize.stockQuality === filterStock;
-    const matchesTitle = prize.title.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSponsorName && matchesStatus && matchesSponsor && matchesStock && matchesTitle;
+    const matchesTitle = prize.prizeName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPrice = searchPrice === '' || (prize.retailValueUSD && prize.retailValueUSD.includes(searchPrice));
+    const matchesStatus = filterStatus === "All" || prize.status === filterStatus;
+    const matchesSponsor = filterSponsor === '' || prize.sponsorId === filterSponsor;
+    return matchesTitle && matchesPrice && matchesStatus && matchesSponsor;
   });
 
   const handlePrizeClick = (prize: PrizeData) => {
@@ -116,9 +109,16 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
-              placeholder="Search by sponsor name..."
-              value={filterSponsorName}
-              onChange={e => setFilterSponsorName(e.target.value)}
+              placeholder="Search by title..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
+            />
+            <input
+              type="text"
+              placeholder="Search by price..."
+              value={searchPrice}
+              onChange={e => setSearchPrice(e.target.value)}
               className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
             />
             <select
@@ -130,44 +130,23 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={filterSponsor}
               onChange={e => setFilterSponsor(e.target.value)}
               className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
             >
               <option value="">All Sponsors</option>
-              {sponsorList.map(s => (
-                <option key={s.id} value={s.name}>{s.name}</option>
+              {sponsors.map(s => (
+                <option key={s.id} value={s.id}>{s.sponsorName}</option>
               ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Search by title..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
-            />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={filterStock}
-              onChange={e => setFilterStock(e.target.value)}
-              className="px-3 py-0 border border-[#E4E7EC] rounded-lg text-sm w-full"
-            >
-              <option value="All">All Stock</option>
-              <option value="Low">Low</option>
-              <option value="High">High</option>
             </select>
             <button
               className="px-4 bg-red-500 text-white py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium w-full sm:w-auto"
               onClick={() => {
-                setFilterSponsorName("");
-                setFilterStatus("All");
-                setFilterSponsor("");
-                setSearchTerm("");
-                setFilterStock("All");
+                setSearchTerm('');
+                setSearchPrice('');
+                setFilterStatus('All');
+                setFilterSponsor('');
               }}
             >
               Clear
@@ -193,21 +172,22 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                 >
                   <div className="relative">
                     {/* Sponsor badge */}
-                    {prize.sponsor && (
+                    {prize.sponsorName && (
                       <span className="absolute right-2 top-2 z-10 bg-blue-100 text-blue-700 border border-blue-300 rounded-full px-1 py-[.75px] text-[11px] font-medium shadow">
-                        {prize.sponsor}
+                        {prize.sponsorName}
                       </span>
                     )}
                     <img
-                      src={prize.imageUrl}
-                      alt={prize.title}
+                      src={prize.thumbnail}
+                      alt={prize.prizeName}
                       className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                   <div className="p-3">
-                    <h3 className="font-medium text-sm text-dark truncate">{prize.title}</h3>
-                    <p className="text-xs text-gray-500 mt-1 font-medium">Qty: {prize.remainingQuantity}</p>
-                    <p className="text-xs text-gray-400 mt-1 truncate">{prize.stockQuality}</p>
+                    <h3 className="font-medium text-sm text-dark truncate">{prize.prizeName}</h3>
+                    <p className="text-xs text-gray-500 mt-1 font-medium">Qty: {prize.quantityAvailable}</p>
+                    <p className="text-xs text-gray-400 mt-1 truncate">Price: ${prize.retailValueUSD}</p>
+                    <p className="text-xs text-gray-400 mt-1 truncate">Status: {prize.status}</p>
                   </div>
                 </div>
               ))}
@@ -219,29 +199,6 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
             </div>
           )}
         </div>
-        {/* Keyword fields */}
-        {/* {selectedPrize && (
-          <div className="px-6 py-4 border-t border-[#E4E7EC] bg-gray-50">
-            <div className="mb-2 font-medium text-gray-700">Keywords</div>
-            <div className="flex gap-2">
-              {keywords.map((kw, idx) => (
-                <input
-                  key={idx}
-                  type="text"
-                  className="form-control flex-1"
-                  value={kw}
-                  onChange={e => {
-                    const newKeywords = [...keywords];
-                    newKeywords[idx] = e.target.value;
-                    setKeywords(newKeywords);
-                  }}
-                  placeholder={`Keyword ${idx + 1}`}
-                />
-              ))}
-            </div>
-            
-          </div>
-        )} */}
         {/* Footer */}
         <div className="flex justify-end p-6 border-t border-[#E4E7EC] bg-gray-50">
           <button

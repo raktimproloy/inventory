@@ -1,14 +1,14 @@
-import ImageLibrary from "@/components/prize-image-library";
+import SponsorGrid from "@/components/sponsor/SponsorGrid";
 import ChsHead from "@/components/layouts/ChsHead";
 import PrivateRoute from "@/routes/PrivetRoute";
 
-const ImageLibraryPage = () => {
+const SponsorGridPage = () => {
 	return (
 		<PrivateRoute>
 			<ChsHead />
-			<ImageLibrary />
+			<SponsorGrid />
 		</PrivateRoute>
 	);
 };
 
-export default ImageLibraryPage;
+export default SponsorGridPage;

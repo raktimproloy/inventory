@@ -5,5 +5,6 @@ import { db } from "../config/firebase.config";
 
 export const addGame = async (data: any) => {
   const prizeCollection = collection(db, "raffles");
-  await addDoc(prizeCollection, data);
+  const docRef = await addDoc(prizeCollection, data);
+  return docRef;
 };
