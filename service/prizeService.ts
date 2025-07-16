@@ -6,5 +6,6 @@ import { FormData } from "@/components/inventory/inventory-form";
 
 export const addPrize = async (data: FormData) => {
   const prizeCollection = collection(db, "prize_database");
-  await addDoc(prizeCollection, data);
+  const docRef = await addDoc(prizeCollection, data);
+  return docRef.id;
 };

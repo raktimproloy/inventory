@@ -7,6 +7,8 @@ import Dropdown from '../../common/dropdown';
 import { toast } from "react-toastify";
 import ConfirmationModal from '../../common/modal';
 
+import { Sponsor } from "../../../../service/sponsorService";
+
 interface InventoryTableProps {
   id: string;  // Changed to string
   prizeName: string;
@@ -20,11 +22,19 @@ interface InventoryTableProps {
 
 interface InventoryTablePropsWithHeading {
   heading: string;
-  items: InventoryTableProps[];  // Accepts items as prop
-  onDelete: (id: string) => void; // Changed to string
+  items: any[];
+  sponsors: Sponsor[];
+  onDelete: (id: string) => void;
 }
 
-const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, items, onDelete }) => {
+const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, items, sponsors, onDelete }) => {
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState({
+    sponsor: '',
+    status: '',
+    search: '',
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]); // Changed to string[]
@@ -35,11 +45,30 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
   const router = useRouter();
   const itemsPerPage = 10;
 
+  // Filtering logic
+  const filteredItems = React.useMemo(() => {
+    let data = [...items];
+    if (filter.sponsor) {
+      data = data.filter(item => item.sponsor === filter.sponsor);
+    }
+    if (filter.status) {
+      data = data.filter(item => item.status === filter.status);
+    }
+    if (filter.search) {
+      const search = filter.search.toLowerCase();
+      data = data.filter(item =>
+        (item.prizeName && item.prizeName.toLowerCase().includes(search)) ||
+        (item.keyDetails && item.keyDetails.toLowerCase().includes(search))
+      );
+    }
+    return data;
+  }, [items, filter]);
+
   // Pagination logic
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const inventoryDataList = items.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(items.length / itemsPerPage);
+  const inventoryDataList = filteredItems.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
 
   // Dropdown toggle
   const handleDropdownToggle = (id: string) => { // Changed to string
@@ -104,19 +133,79 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
     setIsModalOpen(false); // Close modal on cancel
   };
  console.log(inventoryDataList)
+  // Filter dropdown UI
+  const renderFilterDropdown = (
+    <div className="absolute left-[-100%] top-[100%] mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor</label>
+        <select
+          className="w-full border border-gray-300 rounded px-2 py-1"
+          value={filter.sponsor}
+          onChange={e => setFilter(f => ({ ...f, sponsor: e.target.value }))}
+        >
+          <option value="">All Sponsors</option>
+          {sponsors.map(s => (
+            <option key={s.id} value={s.sponsorName}>{s.sponsorName}</option>
+          ))}
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <select
+          className="w-full border border-gray-300 rounded px-2 py-1"
+          value={filter.status}
+          onChange={e => setFilter(f => ({ ...f, status: e.target.value }))}
+        >
+          <option value="">All Status</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+        <input
+          type="text"
+          className="w-full border border-gray-300 rounded px-2 py-1"
+          placeholder="Prize name or keywords"
+          value={filter.search}
+          onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          className="px-3 py-1 bg-gray-200 rounded"
+          onClick={() => setFilter({ sponsor: '', status: '', search: '' })}
+        >
+          Reset
+        </button>
+        <button
+          className="px-3 py-1 bg-primary text-white rounded"
+          onClick={() => setFilterOpen(false)}
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="border border-[#D0D5DD] rounded-xl py-6 bg-white w-full">
         {/* Header */}
-        <div className="flex justify-between items-center mb-4 px-6">
+        <div className="flex justify-between items-center mb-4 px-6 relative">
           <h1 className="text-[18px] font-semibold text-dark">{heading}</h1>
-          <div className="flex items-center space-x-2">
-            <button className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
+          <div className="flex items-center space-x-2 relative">
+            <button
+              className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium"
+              onClick={() => setFilterOpen(f => !f)}
+              type="button"
+            >
               <svg width="20" viewBox="0 0 20 20">
                 <use href="/images/sprite.svg#svg-filter"></use>
               </svg>
               <span>Filter</span>
             </button>
+            {filterOpen && renderFilterDropdown}
             <Link href="/prize-database/create-inventory" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">
               + Create New
             </Link>
@@ -173,9 +262,9 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
                       <span className="text-dark font-medium text-sm">{item.prizeName}</span>
                     </div>
                   </td>
-                  <td className="text-sm text-gray py-3 px-6">{item.ticketSold}</td>
+                  <td className="text-sm text-gray py-3 px-6">{item.keyDetails}</td>
                   <td className="text-sm text-gray py-3 px-6">${item.price}</td>
-                  <td className="text-sm text-gray py-3 px-6">{item.partner}</td>
+                  <td className="text-sm text-gray py-3 px-6">{item.sponsor}</td>
                   <td className="text-sm text-gray py-3 px-6">
                     <div className="flex items-center gap-3">
                       <div className="w-full bg-[#EAECF0] rounded-full h-2">
@@ -213,7 +302,7 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
           </table>
         </div>
 
-        {inventoryDataList.length > 9 && (
+        {totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

@@ -106,8 +106,8 @@ const SidebarData: Array<SidebarData> = [
   },
   {
     id: 5,
-    title: "Prize Image Library",
-    url: "/prize-image-library",
+    title: "Sponsor Library",
+    url: "/sponsor-library",
     icon: "/images/icon/05.svg",
   },
   {

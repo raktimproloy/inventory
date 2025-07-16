@@ -1,11 +1,10 @@
 // ✅ inventory-form.tsx
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
 import Image from "next/image";
 import Link from "next/link";
 import { uploadImageToFirebase } from "../../../../service/uploadImage";
+import { addSponsor, Sponsor, getSponsors, addGameToSponsor } from '../../../../service/sponsorService';
+import { toast } from "react-toastify";
 
 interface UploadedFile {
   url: string;
@@ -33,34 +32,17 @@ export interface FormData {
   additionalInfo: string;
   thumbnail?: string | null;
   keywords: string[];
-  sponsor: any;
+  sponsorId?: string; // <-- add sponsorId
   breakEvenValue: number;
 }
 
+// Update InventoryFormProps to allow extra fields for parent
 interface InventoryFormProps {
   formHeading: string;
   initialData?: FormData;
-  onSubmit: (data: FormData) => void;
+  // Accepts extra fields for parent to handle uploads, etc.
+  onSubmit: (data: any) => Promise<void>;
 }
-
-const validationSchema = yup.object().shape({
-  prizeName: yup.string().required("Prize Name is required"),
-  shortDescription: yup.string().required("Short Description is required"),
-  retailValue: yup.number().typeError("Retail Value must be a number").required("Retail Value is required"),
-  quantityAvailable: yup.number().typeError("Quantity must be a number").required("Quantity Available is required"),
-  partner: yup.string().required("Partner is required"),
-  fullDescription: yup.string().required("Full Description is required"),
-  tags: yup.string().required("Tags are required"),
-  prizeCategory: yup.string().required("Prize Category is required"),
-  fulfillmentMethod: yup.string().required("Fulfillment Method is required"),
-  deliveryTimeline: yup.string().required("Delivery Timeline is required"),
-  claimWindow: yup.string().required("Claim Window is required"),
-  eligibleRegions: yup.string().required("Eligible Regions is required"),
-  retailValueUSD: yup.string().required("Retail Value (USD) is required"),
-  ageRestriction: yup.string().required("Age Restriction is required"),
-  termsConditionsUrl: yup.string().url("Must be a valid URL").required("Terms & Conditions URL is required"),
-  additionalInfo: yup.string().optional(),
-});
 
 const AccordionSection: React.FC<{
   title: string;
@@ -88,7 +70,23 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
   initialData,
   onSubmit,
 }) => {
-  const [files, setFiles] = useState<UploadedFile[]>(initialData?.thumbnail ? [{ url: initialData.thumbnail }] : [{url: "/images/laptop.webp"}]);
+  console.log(initialData)
+  // For edit mode, show both thumbnail and all images (no duplicates)
+  const getInitialFiles = () => {
+    if (initialData) {
+      let urls: string[] = [];
+      if (Array.isArray((initialData as any).images)) {
+        urls = [...(initialData as any).images];
+      }
+      // Do NOT add thumbnail separately
+      // Remove duplicates just in case
+      urls = Array.from(new Set(urls));
+      return urls.length > 0 ? urls.map(url => ({ url })) : [{ url: "/images/laptop.webp" }];
+    }
+    return [{ url: "/images/laptop.webp" }];
+  };
+  const [files, setFiles] = useState<UploadedFile[]>(getInitialFiles());
+  console.log(files)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [openSections, setOpenSections] = useState([true, true, true, true, true, true]);
   const [pickupRequired, setPickupRequired] = useState<boolean>(false);
@@ -99,50 +97,82 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
   const [sponsorModalOpen, setSponsorModalOpen] = useState(false);
   const [sponsorName, setSponsorName] = useState('');
   const [sponsorImages, setSponsorImages] = useState<File[]>([]);
-  const [sponsors, setSponsors] = useState<any[]>([{
-    name: 'Acme Corp',
-    images: ['/images/logo.png'],
-    id: 1,
-  }]);
-  const [selectedSponsor, setSelectedSponsor] = useState<any | null>(null);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
+  const [sponsorLoading, setSponsorLoading] = useState(false);
   const [retailValueUSD, setRetailValueUSD] = useState('');
   const [breakEvenValue, setBreakEvenValue] = useState(0);
+  const [loading, setLoading] = useState(false);
+  // Add manual validation state
+  const [errors, setErrors] = useState<any>({});
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-    watch,
-  } = useForm({
-    defaultValues: initialData || {},
-    resolver: yupResolver(validationSchema),
-  });
-
-  const watchedValues = watch();
+  // Add state for all form fields
+  const [prizeName, setPrizeName] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [retailValue, setRetailValue] = useState('');
+  const [quantityAvailable, setQuantityAvailable] = useState('');
+  const [partner, setPartner] = useState('');
+  const [fullDescription, setFullDescription] = useState('');
+  const [tags, setTags] = useState('');
+  const [prizeCategory, setPrizeCategory] = useState('');
+  const [fulfillmentMethod, setFulfillmentMethod] = useState('');
+  const [deliveryTimeline, setDeliveryTimeline] = useState('');
+  const [claimWindow, setClaimWindow] = useState('');
+  const [eligibleRegions, setEligibleRegions] = useState('');
+  const [ageRestriction, setAgeRestriction] = useState('');
+  const [termsConditionsUrl, setTermsConditionsUrl] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
 
   useEffect(() => {
     if (initialData) {
-      reset(initialData);
+      // reset(initialData); // No longer needed with manual validation
       setPickupRequired(initialData.pickupRequired || false);
       setIdRequired(initialData.idRequired || false);
+      setPrizeName(initialData.prizeName);
+      setShortDescription(initialData.shortDescription);
+      setRetailValue(initialData.retailValueUSD.toString());
+      setQuantityAvailable(initialData.quantityAvailable.toString());
+      setPartner(initialData.partner);
+      setFullDescription(initialData.fullDescription);
+      setTags(initialData.tags);
+      setPrizeCategory(initialData.prizeCategory);
+      setFulfillmentMethod(initialData.fulfillmentMethod);
+      setDeliveryTimeline(initialData.deliveryTimeline);
+      setClaimWindow(initialData.claimWindow);
+      setEligibleRegions(initialData.eligibleRegions);
+      setAgeRestriction(initialData.ageRestriction);
+      setTermsConditionsUrl(initialData.termsConditionsUrl);
+      setAdditionalInfo(initialData.additionalInfo);
+      setRetailValueUSD(initialData.retailValueUSD);
+      setBreakEvenValue(initialData.breakEvenValue);
+      setKeyword1(initialData.keywords[0] || '');
+      setKeyword2(initialData.keywords[1] || '');
+      setKeyword3(initialData.keywords[2] || '');
+      // setFiles(initialData.thumbnail ? [{ url: initialData.thumbnail }] : [{url: "/images/laptop.webp"}]);
+      // If sponsorId exists and selectedSponsor is not set, fetch and set it
+      if (initialData.sponsorId && !selectedSponsor) {
+        (async () => {
+          const sponsorList = await getSponsors();
+          const found = sponsorList.find(s => s.id === initialData.sponsorId);
+          if (found) setSelectedSponsor(found);
+        })();
+      }
     }
-  }, [initialData, reset]);
+  }, [initialData]);
 
-  useEffect(() => {
-    console.log("Form Values:", {
-      ...watchedValues,
-      pickupRequired,
-      idRequired,
-      files: files.map(f => f.url),
-      selectedFiles: selectedFiles.map(f => f.name)
-    });
-  }, [watchedValues, pickupRequired, idRequired, files, selectedFiles]);
 
   useEffect(() => {
     const retail = Number(retailValueUSD) || 0;
     setBreakEvenValue(retail * 2.5);
   }, [retailValueUSD]);
+
+  useEffect(() => {
+    // Fetch sponsors from Firestore
+    (async () => {
+      const sponsorList = await getSponsors();
+      setSponsors(sponsorList);
+    })();
+  }, []);
 
   function formatCurrency(value: number) {
     return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -175,60 +205,47 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     setSponsorImages(prev => [...prev, ...files]);
   };
 
-  const handleAddSponsor = () => {
+  const handleAddSponsor = async () => {
     if (!sponsorName || sponsorImages.length === 0) return;
-    const newSponsor = {
-      id: Date.now(),
-      name: sponsorName,
-      images: sponsorImages.map(f => URL.createObjectURL(f)),
-    };
-    setSponsors(prev => [...prev, newSponsor]);
-    setSelectedSponsor(newSponsor);
-    setSponsorModalOpen(false);
-    setSponsorName('');
-    setSponsorImages([]);
+    setSponsorLoading(true);
+    try {
+      const newSponsor = await addSponsor(sponsorName, sponsorImages);
+      setSponsors(prev => [...prev, newSponsor]);
+      setSelectedSponsor(newSponsor);
+      setSponsorModalOpen(false);
+      setSponsorName('');
+      setSponsorImages([]);
+    } catch (err) {
+      // Optionally show error toast
+      console.error('Error adding sponsor:', err);
+    } finally {
+      setSponsorLoading(false);
+    }
   };
 
-  const handleFormSubmit = async (data: any) => {
-    try {
-      let uploadedUrls: string[] = [];
-      if (selectedFiles.length > 0) {
-        uploadedUrls = await Promise.all(selectedFiles.map(f => uploadImageToFirebase(f)));
-      }
-      
-      const formData: FormData & { keywords: string[], sponsor: any, breakEvenValue: number } = {
-        ...data,
-        retailValueUSD,
-        keywords: [keyword1, keyword2, keyword3].filter(Boolean),
-        quantityAvailable: Number(data.quantityAvailable),
-        pickupRequired,
-        idRequired,
-        thumbnail: uploadedUrls[0] || files[0]?.url || null,
-        sponsor: selectedSponsor,
-        breakEvenValue,
-      };
-
-      console.log("Submitting Form Data:", formData);
-      
-      onSubmit(formData);
-      reset();
-      setFiles([]);
-      setSelectedFiles([]);
-      setPickupRequired(false);
-      setIdRequired(false);
-      setKeyword1(''); setKeyword2(''); setKeyword3('');
-      setSelectedSponsor(null);
-      setBreakEvenValue(0);
-      setRetailValueUSD('');
-    } catch (error) {
-      console.error("Form submission error:", error);
-    }
+  // Manual validation function
+  const validate = (data: any) => {
+    const newErrors: any = {};
+    if (!data.prizeName) newErrors.prizeName = 'Prize Name is required';
+    if (!data.quantityAvailable || isNaN(Number(data.quantityAvailable))) newErrors.quantityAvailable = 'Quantity Available is required and must be a number';
+    if (!data.fullDescription) newErrors.fullDescription = 'Full Description is required';
+    if (!data.tags) newErrors.tags = 'Tags are required';
+    if (!data.prizeCategory) newErrors.prizeCategory = 'Prize Category is required';
+    if (!data.fulfillmentMethod) newErrors.fulfillmentMethod = 'Fulfillment Method is required';
+    if (!data.deliveryTimeline) newErrors.deliveryTimeline = 'Delivery Timeline is required';
+    if (!data.claimWindow) newErrors.claimWindow = 'Claim Window is required';
+    if (!data.eligibleRegions) newErrors.eligibleRegions = 'Eligible Regions is required';
+    if (!retailValueUSD) newErrors.retailValueUSD = 'Retail Value (USD) is required';
+    if (!data.ageRestriction) newErrors.ageRestriction = 'Age Restriction is required';
+    if (!data.termsConditionsUrl) newErrors.termsConditionsUrl = 'Terms & Conditions URL is required';
+    // Add more as needed
+    return newErrors;
   };
 
   return (
     <div className="border border-[#D0D5DD] rounded-xl p-4 md:p-6 bg-[#00000033] w-full">
       <h2 className="text-[18px] font-semibold text-dark mb-6 md:mb-8">{formHeading}</h2>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      <form className="space-y-4">
         <AccordionSection className="!bg-[#E9E9E9] !border-[#F3F3F5] !rounded-lg text-dark" title="1. Basic Info" isOpen={openSections[0]} onClick={() => toggleSection(0)}>
           <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
             <div className="form-group">
@@ -238,9 +255,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 type="text" 
                 id="prizeName" 
                 placeholder="Enter prize name" 
-                {...register("prizeName")} 
+                value={prizeName}
+                onChange={e => setPrizeName(e.target.value)}
               />
-              {errors.prizeName && <p className="text-red-500 text-sm mt-1">{errors.prizeName.message}</p>}
+              {errors.prizeName && <p className="text-red-500 text-sm mt-1">{errors.prizeName}</p>}
             </div>
             <div className="form-group">
               <label className="block text-sm font-medium text-gray-700 mb-1">Short Description - Three (3) Keywords</label>
@@ -283,9 +301,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 type="number"
                 id="quantityAvailable"
                 placeholder="Enter quantity"
-                {...register("quantityAvailable")}
+                value={quantityAvailable}
+                onChange={e => setQuantityAvailable(e.target.value)}
               />
-              {errors.quantityAvailable && <p className="text-red-500 text-sm mt-1">{errors.quantityAvailable.message}</p>}
+              {errors.quantityAvailable && <p className="text-red-500 text-sm mt-1">{errors.quantityAvailable}</p>}
             </div>
           </div>
           <div className="grid md:grid-cols-1 grid-cols-1 gap-4 md:gap-6">
@@ -296,9 +315,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="fullDescription" 
                 placeholder="Enter full description" 
                 rows={5} 
-                {...register("fullDescription")} 
+                value={fullDescription}
+                onChange={e => setFullDescription(e.target.value)}
               />
-              {errors.fullDescription && <p className="text-red-500 text-sm mt-1">{errors.fullDescription.message}</p>}
+              {errors.fullDescription && <p className="text-red-500 text-sm mt-1">{errors.fullDescription}</p>}
             </div>
             <div className="form-group col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">Images</label>
@@ -379,10 +399,11 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             type="text" 
             id="tags" 
             placeholder="Enter tags separated by commas" 
-            {...register("tags")}
+            value={tags}
+            onChange={e => setTags(e.target.value)}
           />
           <span className="text-gray-500 text-xs mt-1 block">Example: electronics, gaming, premium</span>
-          {errors.tags && <p className="text-red-500 text-sm mt-1">{errors.tags.message}</p>}
+          {errors.tags && <p className="text-red-500 text-sm mt-1">{errors.tags}</p>}
         </div>
 
         <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="2. Prize Sponsorship" isOpen={openSections[1]} onClick={() => toggleSection(1)}>
@@ -394,13 +415,13 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               className="form-control w-full"
               value={selectedSponsor?.id || ''}
               onChange={e => {
-                const found = sponsors.find(s => s.id === Number(e.target.value));
+                const found = sponsors.find(s => s.id === e.target.value);
                 setSelectedSponsor(found || null);
               }}
             >
               <option value="">Select Sponsor</option>
               {sponsors.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id}>{s.sponsorName}</option>
               ))}
             </select>
                 <button
@@ -412,12 +433,12 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                   + Add New Sponsor
                 </button>
               </div>
-              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory.message}</p>}
+              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory}</p>}
             </div>
             <div className="form-group">
               <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor Logos*</label>
               <div className="flex flex-wrap gap-2">
-                {selectedSponsor && selectedSponsor.images.map((img: string, idx: number) => (
+                {selectedSponsor && selectedSponsor.logo.map((img: string, idx: number) => (
                   <img key={idx} src={img} alt="sponsor logo" className="w-36 h-16 object-contain rounded border" />
                 ))}
               </div>
@@ -472,8 +493,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                     type="button"
                     className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
                     onClick={handleAddSponsor}
-                    disabled={!sponsorName || sponsorImages.length === 0}
-                  >Add</button>
+                    disabled={!sponsorName || sponsorImages.length === 0 || sponsorLoading}
+                  >
+                    {sponsorLoading ? 'Adding...' : 'Add'}
+                  </button>
                 </div>
                 <button
                   type="button"
@@ -494,7 +517,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               <select 
                 id="prizeCategory" 
                 className={`form-control ${errors.prizeCategory ? 'border-red-500' : ''}`} 
-                {...register("prizeCategory")}
+                value={prizeCategory}
+                onChange={e => setPrizeCategory(e.target.value)}
               >
                 <option value="">Select Prize Category</option>
                 <option value="Vehicle">Vehicle</option>
@@ -505,7 +529,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 <option value="Style">Style</option>
                 <option value="Beauty & Grooming">Beauty & Grooming</option>
               </select>
-              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory.message}</p>}
+              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory}</p>}
                 <button 
                   type="button"
                   className="form-control w-[200px] md:w-[250px] text-left text-gray-500 hover:bg-gray-50"
@@ -514,7 +538,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                   + Add New Type
                 </button>
               </div>
-              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory.message}</p>}
+              {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory}</p>}
             </div>
           </div>
         </AccordionSection>
@@ -526,14 +550,15 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               <select 
                 id="fulfillmentMethod" 
                 className={`form-control ${errors.fulfillmentMethod ? 'border-red-500' : ''}`} 
-                {...register("fulfillmentMethod")}
+                value={fulfillmentMethod}
+                onChange={e => setFulfillmentMethod(e.target.value)}
               >
                 <option value="">Select Fulfillment Method</option>
                 <option value="Digital">Digital</option>
                 <option value="Delivery">Delivery</option>
                 <option value="Collection">Collection</option>
               </select>
-              {errors.fulfillmentMethod && <p className="text-red-500 text-sm mt-1">{errors.fulfillmentMethod.message}</p>}
+              {errors.fulfillmentMethod && <p className="text-red-500 text-sm mt-1">{errors.fulfillmentMethod}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="deliveryTimeline" className="block text-sm font-medium text-gray-700 mb-1">Delivery Timeline*</label>
@@ -542,9 +567,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 type="text" 
                 id="deliveryTimeline" 
                 placeholder="e.g., 3-5 business days" 
-                {...register("deliveryTimeline")}
+                value={deliveryTimeline}
+                onChange={e => setDeliveryTimeline(e.target.value)}
               />
-              {errors.deliveryTimeline && <p className="text-red-500 text-sm mt-1">{errors.deliveryTimeline.message}</p>}
+              {errors.deliveryTimeline && <p className="text-red-500 text-sm mt-1">{errors.deliveryTimeline}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="claimWindow" className="block text-sm font-medium text-gray-700 mb-1">Claim Window*</label>
@@ -553,16 +579,18 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 type="text" 
                 id="claimWindow" 
                 placeholder="e.g., 30 days" 
-                {...register("claimWindow")}
+                value={claimWindow}
+                onChange={e => setClaimWindow(e.target.value)}
               />
-              {errors.claimWindow && <p className="text-red-500 text-sm mt-1">{errors.claimWindow.message}</p>}
+              {errors.claimWindow && <p className="text-red-500 text-sm mt-1">{errors.claimWindow}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="eligibleRegions" className="block text-sm font-medium text-gray-700 mb-1">Eligible Regions*</label>
               <select 
                 id="eligibleRegions" 
                 className={`form-control ${errors.eligibleRegions ? 'border-red-500' : ''}`} 
-                {...register("eligibleRegions")}
+                value={eligibleRegions}
+                onChange={e => setEligibleRegions(e.target.value)}
               >
                 <option value="">Select Eligible Region</option>
                 <option value="arima">Arima</option>
@@ -587,7 +615,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 <option value="tunapuna">Tunapuna</option>
                 <option value="valencia">Valencia</option>
               </select>
-              {errors.eligibleRegions && <p className="text-red-500 text-sm mt-1">{errors.eligibleRegions.message}</p>}
+              {errors.eligibleRegions && <p className="text-red-500 text-sm mt-1">{errors.eligibleRegions}</p>}
             </div>
             <div className="form-group flex items-center gap-2 justify-between">
               <label htmlFor="pickupRequired" className="block text-sm font-medium text-gray-700">Pickup Required</label>
@@ -612,7 +640,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 onChange={e => setRetailValueUSD(e.target.value.replace(/[^\d.]/g, ''))}
                 name="retailValueUSD"
               />
-              {errors.retailValueUSD && <p className="text-red-500 text-sm mt-1">{errors.retailValueUSD.message}</p>}
+              {errors.retailValueUSD && <p className="text-red-500 text-sm mt-1">{errors.retailValueUSD}</p>}
             </div>
             <div className="form-group">
               <label className="block text-sm font-medium text-gray-700 mb-1">Break-even Value</label>
@@ -637,9 +665,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 type="text" 
                 id="ageRestriction" 
                 placeholder="e.g., 18+" 
-                {...register("ageRestriction")}
+                value={ageRestriction}
+                onChange={e => setAgeRestriction(e.target.value)}
               />
-              {errors.ageRestriction && <p className="text-red-500 text-sm mt-1">{errors.ageRestriction.message}</p>}
+              {errors.ageRestriction && <p className="text-red-500 text-sm mt-1">{errors.ageRestriction}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="termsConditionsUrl" className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions URL*</label>
@@ -648,9 +677,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 type="url" 
                 id="termsConditionsUrl" 
                 placeholder="https://example.com/terms" 
-                {...register("termsConditionsUrl")}
+                value={termsConditionsUrl}
+                onChange={e => setTermsConditionsUrl(e.target.value)}
               />
-              {errors.termsConditionsUrl && <p className="text-red-500 text-sm mt-1">{errors.termsConditionsUrl.message}</p>}
+              {errors.termsConditionsUrl && <p className="text-red-500 text-sm mt-1">{errors.termsConditionsUrl}</p>}
             </div>
             <div className="form-group flex items-center gap-2 justify-between">
               <label htmlFor="idRequired" className="block text-sm font-medium text-gray-700">ID Required</label>
@@ -676,13 +706,14 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="additionalInfo" 
                 placeholder="Enter any additional information" 
                 rows={5} 
-                {...register("additionalInfo")}
+                value={additionalInfo}
+                onChange={e => setAdditionalInfo(e.target.value)}
               />
             </div>
           </div>
         </AccordionSection>
         
-
+{/* 
         <div className="w-full mt-6">
           <button
             type="button"
@@ -690,7 +721,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
           >
             Add Custom Section
           </button>
-        </div>
+        </div> */}
 
         <div className="flex flex-col sm:flex-row justify-end items-center gap-4 mt-6">
           <Link
@@ -700,10 +731,55 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             Cancel
           </Link>
           <button
-            type="submit"
+            type="button"
             className="w-full sm:w-auto inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true);
+              try {
+                // Gather form data from state
+                let imageUrls: string[] = [];
+                if (selectedFiles.length > 0) {
+                  imageUrls = await Promise.all(selectedFiles.map(f => uploadImageToFirebase(f)));
+                }
+                const data = {
+                  prizeName,
+                  quantityAvailable,
+                  fullDescription,
+                  tags,
+                  prizeCategory,
+                  fulfillmentMethod,
+                  deliveryTimeline,
+                  claimWindow,
+                  eligibleRegions,
+                  retailValueUSD,
+                  ageRestriction,
+                  termsConditionsUrl,
+                  additionalInfo,
+                  pickupRequired,
+                  idRequired,
+                  images: imageUrls.length > 0 ? imageUrls : files.map(f => f.url),
+                  thumbnail: imageUrls[0] || files[0]?.url || null,
+                  keywords: [keyword1, keyword2, keyword3].filter(Boolean),
+                  breakEvenValue,
+                  ...(selectedSponsor && { sponsorId: selectedSponsor.id }),
+                };
+                console.log(data)
+                const validationErrors = validate(data);
+                setErrors(validationErrors);
+                console.log(Object.keys(validationErrors).length)
+
+                if (Object.keys(validationErrors).length === 0) {
+                  await onSubmit({...data, status: "Active"});
+                }
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
-            Save
+            {loading ? (
+              <span className="flex items-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Saving...</span>
+            ) : 'Save'}
           </button>
         </div>
       </form>

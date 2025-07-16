@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import InventoryForm, { FormData } from "./../inventory-form";
 import { toast } from "react-toastify";
 import { fetchSingleData, updatedData } from "../../../../utility";
+import { getSponsors, Sponsor } from '../../../../service/sponsorService';
 
 const EditInventory: React.FC = () => {
   const router = useRouter();
@@ -25,6 +26,14 @@ const EditInventory: React.FC = () => {
         const data = await fetchSingleData("prize_database", id);
 
         if (data) {
+          // If sponsorId exists, fetch sponsors and set selectedSponsor
+          if (data.sponsorId) {
+            const sponsors: Sponsor[] = await getSponsors();
+            const matchedSponsor = sponsors.find(s => s.id === data.sponsorId);
+            if (matchedSponsor) {
+              data.selectedSponsor = matchedSponsor;
+            }
+          }
           setInitialData(data); // Set the fetched data as initial form data
         } else {
           toast.error("Inventory item not found!");

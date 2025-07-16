@@ -3,14 +3,17 @@ import React from "react";
 import InventoryForm, { FormData } from "./../inventory-form";
 import { toast } from "react-toastify";
 import { addPrize } from "../../../../service/prizeService";
+import { addGameToSponsor } from '../../../../service/sponsorService';
 
 const CreateInventory: React.FC = () => {
   const handleCreate = async (data: FormData) => {
     try {
       console.log("=== CREATING INVENTORY ITEM ===");
       console.log("Form Data:", data);
-      
-      await addPrize(data);
+      const prizeId = await addPrize(data);
+      if (data.sponsorId && prizeId) {
+        await addGameToSponsor(data.sponsorId, prizeId);
+      }
       toast.success("Prize saved successfully!");
     } catch (error) {
       console.error("Error creating inventory item:", error);

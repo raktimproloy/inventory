@@ -2,20 +2,41 @@
 import React, { useEffect, useState } from "react";
 import InventoryTable from "./../inventory-table";
 import { fetchUsers, deleteData } from "../../../../utility";
+import { getSponsors, Sponsor } from "../../../../service/sponsorService";
 import { toast } from "react-toastify";
 
 const InventoryList: React.FC = () => {
   const [inventoryData, setInventoryData] = useState<any[]>([]);
-  console.log(inventoryData)
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+
   useEffect(() => {
-    getAllInventory();
+    getAllData();
   }, []);
 
-  const getAllInventory = async () => {
+  const getAllData = async () => {
     try {
-      // Fetch inventory data from the "Prize_Database" collection
-      const inventoryData = await fetchUsers("prize_database");
-      setInventoryData(inventoryData);
+      const [rawInventory, sponsorList] = await Promise.all([
+        fetchUsers("prize_database"),
+        getSponsors(),
+      ]);
+      setSponsors(sponsorList);
+      // Map sponsorId to sponsorName
+      const sponsorMap = sponsorList.reduce((acc, s) => {
+        acc[s.id] = s.sponsorName;
+        return acc;
+      }, {} as Record<string, string>);
+      // Transform inventory data
+      const transformed = rawInventory.map((item: any) => ({
+        id: item.id,
+        prizeName: item.prizeName || '',
+        keyDetails: Array.isArray(item.keywords) ? item.keywords.join(', ') : (item.keywords || ''),
+        price: item.retailValueUSD || '',
+        sponsor: sponsorMap[item.sponsorId] || '',
+        stockLevel: item.quantityAvailable || 0,
+        status: item.status || 'Inactive',
+        thumbnail: item.thumbnail || '',
+      }));
+      setInventoryData(transformed);
     } catch (error) {
       console.error("Error fetching inventory data:", error);
       toast.error("Failed to fetch inventory data.");
@@ -35,9 +56,10 @@ const InventoryList: React.FC = () => {
   };
 
   return (
-    <div className="inventory-list">
+    <div className="inventory-list relative">
       <InventoryTable
         items={inventoryData}
+        sponsors={sponsors}
         heading="Prize List"
         onDelete={handleDelete}
       />
