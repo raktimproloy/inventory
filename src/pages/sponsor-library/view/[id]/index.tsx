@@ -96,7 +96,7 @@ const SponsorViewPage = () => {
                                                     style={{ width: `${item.quantityAvailable || 0}%` }}
                                                 ></div>
                                             </div>
-                                            <span className="text-gray-700 text-sm">{item.quantityAvailable || 0}</span>
+                                            <span className="text-gray-700 text-sm ml-2">{item.quantityAvailable || 0}</span>
                                         </div>
                                     </td>
                                     <td className="text-sm text-gray py-3 px-6 text-center">

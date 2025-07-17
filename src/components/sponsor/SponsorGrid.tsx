@@ -125,7 +125,7 @@ const SponsorGrid: React.FC = () => {
               title="View Sponsor"
             >
               {sponsor.logo && sponsor.logo[0] ? (
-                <Image src={sponsor.logo[0]} alt={sponsor.sponsorName} width={1000} height={1000} className="object-contain max-h-[100%] max-w-[100%]" onClick={() => handleThumbnailClick(sponsor.id)} />
+                <Image src={sponsor.logo[0]} alt={sponsor.sponsorName} width={1000} height={1000} className="object-contain rounded-t-xl max-h-[100%] max-w-[100%]" onClick={() => handleThumbnailClick(sponsor.id)} />
               ) : (
                 <span className="text-gray-400 text-2xl">?</span>
               )}
