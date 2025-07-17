@@ -23,7 +23,7 @@ const SponsorGrid: React.FC = () => {
   const [editLoading, setEditLoading] = useState(false);
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4; // You can adjust this as needed
+  const itemsPerPage = 12; // You can adjust this as needed
 
   useEffect(() => {
     fetchSponsors();

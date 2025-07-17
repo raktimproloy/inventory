@@ -18,7 +18,7 @@ const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex gap-3 justify-between items-center px-6 mt-5 table-pagination">
+    <div className="flex gap-3 w-full justify-between items-center px-6 mt-5 table-pagination">
       <div className="text-sm text-dark">
         Page {currentPage} of {totalPages}
       </div>
