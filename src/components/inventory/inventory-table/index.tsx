@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Dropdown from '../../common/dropdown';
 import { toast } from "react-toastify";
 import ConfirmationModal from '../../common/modal';
+import { collection, getDocs, updateDoc, doc, arrayRemove } from "firebase/firestore";
+import { db } from "../../../../config/firebase.config";
 
 import { Sponsor } from "../../../../service/sponsorService";
 
@@ -24,7 +26,7 @@ interface InventoryTablePropsWithHeading {
   heading: string;
   items: any[];
   sponsors: Sponsor[];
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }
 
 const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, items, sponsors, onDelete }) => {
@@ -90,11 +92,22 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
     setIsModalOpen(true); // Show the modal
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedItemId !== null) {
       try {
-        onDelete(selectedItemId); // Perform the delete action
-        toast.success("Deleted successfully!");
+        await onDelete(selectedItemId); // Perform the delete action (should delete from inventory/prize)
+        // Remove the prize ID from all sponsors' prizesCreation arrays
+        const sponsorsSnapshot = await getDocs(collection(db, "sponsors"));
+        const sponsorUpdates = sponsorsSnapshot.docs.map(async (sponsorDoc) => {
+          const sponsorData = sponsorDoc.data();
+          if (Array.isArray(sponsorData.prizesCreation) && sponsorData.prizesCreation.includes(selectedItemId)) {
+            await updateDoc(doc(db, "sponsors", sponsorDoc.id), {
+              prizesCreation: arrayRemove(selectedItemId)
+            });
+          }
+        });
+        await Promise.all(sponsorUpdates);
+        toast.success("Deleted successfully and sponsor data updated!");
         setIsModalOpen(false); // Close the modal after confirmation
       } catch (error) {
         toast.error("Deletion failed! Please try again.");

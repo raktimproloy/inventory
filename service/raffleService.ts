@@ -7,6 +7,8 @@ export interface RaffleItem {
   title: string;
   image: string;
   description: string;
+  createdAt?: any;
+  expiryDate?: any;
 }
 
 
@@ -24,6 +26,8 @@ export const getAllRaffles = async (limitCount = 4): Promise<RaffleItem[]> => {
       title: data.title || "Untitled",
       image: data.picture || "/images/Avatars.png",
       description: data.description || "",
+      createdAt: data.createdAt,
+      expiryDate: data.expiryDate,
     };
   });
 };

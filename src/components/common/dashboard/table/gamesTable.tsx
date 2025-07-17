@@ -12,7 +12,8 @@ interface GameItem {
   picture: string;
   partner: string;
   description: string;
-  price: string;
+  price: string | number;
+  ticketSold: number;
   createdAt: {
     seconds: number;
     nanoseconds: number;
@@ -30,61 +31,21 @@ interface GamesTableProps {
   onDelete: (id: string) => void;
 }
 
-const countDown = [
-  {
-      createdAt: {
-          "seconds": Math.floor(new Date('2025-06-21').getTime() / 1000), // Starts June 21, 2025 (Pending)
-          "nanoseconds": 0
-      },
-      expiryDate: {
-          "seconds": Math.floor(new Date('2025-07-24').getTime() / 1000), // Ends June 24, 2025 (3 days later)
-          "nanoseconds": 0
-      }
-  },
-  {
-      createdAt: {
-          "seconds": Math.floor(new Date('2025-06-17').getTime() / 1000), // Started June 17, 2025 (Live)
-          "nanoseconds": 0
-      },
-      expiryDate: {
-          "seconds": Math.floor(new Date('2025-08-20').getTime() / 1000), // Ends June 20, 2025
-          "nanoseconds": 0
-      }
-  },
-  {
-      createdAt: {
-          "seconds": Math.floor(new Date('2025-07-13').getTime() / 1000), // Started June 18, 2025 (Live)
-          "nanoseconds": 0
-      },
-      expiryDate: {
-          "seconds": Math.floor(new Date('2025-08-10').getTime() / 1000), // Ends June 19, 2025
-          "nanoseconds": 0
-      }
-  },
-  {
-      createdAt: {
-          "seconds": Math.floor(new Date('2025-06-12').getTime() / 1000), // Started June 12, 2025 (Live)
-          "nanoseconds": 0
-      },
-      expiryDate: {
-          "seconds": Math.floor(new Date('2025-06-17').getTime() / 1000), // Ended June 17, 2025 (Expired)
-          "nanoseconds": 0
-      }
-  }
-];
+// Helper to get JS Date from Firestore Timestamp or object
+const getDate = (val: any) => {
+  if (!val) return new Date(0);
+  if (typeof val.toDate === 'function') return val.toDate();
+  if (typeof val === 'object' && val.seconds) return new Date(val.seconds * 1000);
+  return new Date(val);
+};
 
-const getStatus = (index: number) => {
-  const now = new Date().getTime();
-  const createdTime = countDown[index].createdAt.seconds * 1000;
-  const expiryTime = countDown[index].expiryDate.seconds * 1000;
-
-  if (now < createdTime) {
-    return 'Pending';
-  } else if (now >= createdTime && now < expiryTime) {
-    return 'Live';
-  } else {
-    return 'Ended';
-  }
+const getStatus = (createdAt: any, expiryDate: any) => {
+  const now = new Date();
+  const start = getDate(createdAt);
+  const end = getDate(expiryDate);
+  if (now < start) return 'Pending';
+  if (now >= start && now < end) return 'Live';
+  return 'Ended';
 };
 
 const getCountdown = (now: Date, targetDate: Date) => {
@@ -216,17 +177,17 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
               </tr>
             </thead>
             <tbody>
-              {sortedItems.map((item, index) => {
-                const status = getStatus(index);
+              {sortedItems.map((item) => {
+                const status = getStatus(item.createdAt, item.expiryDate);
                 const now = currentTime;
                 let countdownTarget: Date;
                 let countdownText: string;
 
                 if (status === 'Pending') {
-                  countdownTarget = new Date(countDown[index].createdAt.seconds * 1000);
+                  countdownTarget = getDate(item.createdAt);
                   countdownText = getCountdown(now, countdownTarget);
                 } else if (status === 'Live') {
-                  countdownTarget = new Date(countDown[index].expiryDate.seconds * 1000);
+                  countdownTarget = getDate(item.expiryDate);
                   countdownText = getCountdown(now, countdownTarget);
                 } else {
                   countdownText = '0 Day: 00 Hours: 00 Mins';
@@ -255,8 +216,8 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
                         <span className="text-dark font-medium text-sm">{limitWords(item.title)}</span>
                       </div>
                     </td>
-                    <td className="text-sm text-gray py-3 px-6">{item.description}</td>
-                    <td className="text-sm text-gray py-3 px-6">${item.price}</td>
+                    <td className="text-sm text-gray py-3 px-6">{item.ticketSold}</td>
+                    <td className="text-sm text-gray py-3 px-6">{typeof item.price === 'string' ? `$${item.price}` : item.price}</td>
                     <td className="text-sm text-gray py-3 px-6">{item.partner}</td>
                     <td className="text-sm text-gray py-3 px-6">
                       <span className="">

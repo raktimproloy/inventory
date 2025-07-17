@@ -3,6 +3,8 @@ import { useRouter } from "next/router";
 import Dropdown from "../common/dropdown";
 import ConfirmationModal from "../common/modal";
 import Image from "next/image";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../../config/firebase.config";
 
 interface ImageData {
     id: string;
@@ -14,6 +16,8 @@ interface ImageData {
     description: string;
 }
 
+const IMAGES_PER_PAGE = 8;
+
 const ImageLibrary = () => {
     const [images, setImages] = useState<ImageData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -22,12 +26,26 @@ const ImageLibrary = () => {
     const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
     const [viewModal, setViewModal] = useState<{ open: boolean; image: ImageData | null }>({ open: false, image: null });
     const [editModal, setEditModal] = useState<{ open: boolean; image: ImageData | null }>({ open: false, image: null });
+    const [currentPage, setCurrentPage] = useState(1);
     const router = useRouter();
 
     const fetchImages = async () => {
+        setLoading(true);
         try {
-            const response = await fetch('/data/game-images.json');
-            const imageList = await response.json();
+            const querySnapshot = await getDocs(collection(db, "image_library"));
+            const imageList: ImageData[] = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                imageList.push({
+                    id: doc.id,
+                    title: data.title || "",
+                    remainingQuantity: data.remainingQuantity || 0,
+                    stockQuality: data.stockQuality || "",
+                    imageUrl: data.imageUrl || "",
+                    category: data.gameCategory || "",
+                    description: data.description || "",
+                });
+            });
             setImages(imageList);
         } catch (error) {
             console.error('Error fetching images:', error);
@@ -39,6 +57,10 @@ const ImageLibrary = () => {
     useEffect(() => {
         fetchImages();
     }, []);
+
+    // Pagination logic
+    const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE);
+    const paginatedImages = images.slice((currentPage - 1) * IMAGES_PER_PAGE, currentPage * IMAGES_PER_PAGE);
 
     const handleDropdownToggle = (id: string) => {
         setOpenDropdown((prev) => (prev === id ? null : id));
@@ -57,15 +79,21 @@ const ImageLibrary = () => {
     };
 
     const handleView = (image: ImageData) => {
-        setViewModal({ open: true, image });
+        router.push(`/game-images/view/${image.id}`);
     };
 
-    const handleEdit = (image: ImageData) => {
-        setEditModal({ open: true, image });
+    const handleEdit = (id: string) => {
+        router.push(`/game-images/edit/${id}`);
     };
 
     const handleThumbnailClick = (id: string) => {
         router.push(`/game-images/view/${id}`);
+    };
+
+    const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     if (loading) {
@@ -93,7 +121,7 @@ const ImageLibrary = () => {
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {images.map((img) => (
+                {paginatedImages.map((img) => (
                     <div
                         key={img.id}
                         className="flex flex-col items-center group min-h-[210px]"
@@ -105,7 +133,7 @@ const ImageLibrary = () => {
                             title="View Image"
                         >
                             {img.imageUrl ? (
-                                <img src={img.imageUrl} alt={img.title} className="object-contain rounded-xl max-h-[100%] max-w-[100%]" onClick={() => handleThumbnailClick(img.id)} />
+                                <img src={img.imageUrl} alt={img.title} className="object-contain rounded-xl max-h-40 max-w-[100%]" onClick={() => handleThumbnailClick(img.id)} />
                             ) : (
                                 <span className="text-gray-400 text-2xl">?</span>
                             )}
@@ -117,7 +145,7 @@ const ImageLibrary = () => {
                                     toggleDropdown={() => handleDropdownToggle(img.id)}
                                     options={[
                                         { id: 1, name: '/images/icon/eye1.svg', title: 'View', action: () => handleView(img) },
-                                        { id: 2, name: '/images/icon/edit1.svg', title: 'Edit', action: () => handleEdit(img) },
+                                        { id: 2, name: '/images/icon/edit1.svg', title: 'Edit', action: () => handleEdit(img.id) },
                                         { id: 3, name: '/images/icon/delete1.svg', title: 'Delete', action: () => handleDelete(img.id) },
                                     ]}
                                 />
@@ -128,6 +156,34 @@ const ImageLibrary = () => {
                     </div>
                 ))}
             </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                        className="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        Prev
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            className={`px-3 py-1 rounded border ${currentPage === page ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300'}`}
+                            onClick={() => handlePageChange(page)}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button
+                        className="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
             {/* Delete Confirmation Modal */}
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}

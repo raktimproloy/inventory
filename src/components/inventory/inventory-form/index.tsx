@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { uploadImageToFirebase } from "../../../../service/uploadImage";
-import { addSponsor, Sponsor, getSponsors, addGameToSponsor } from '../../../../service/sponsorService';
+import { addSponsor, Sponsor, getSponsors } from '../../../../service/sponsorService';
 import { toast } from "react-toastify";
 
 interface UploadedFile {
@@ -261,12 +261,12 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               {errors.prizeName && <p className="text-red-500 text-sm mt-1">{errors.prizeName}</p>}
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Short Description - Three (3) Keywords</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Short Description - 3 Details</label>
               <div className="flex flex-wrap md:flex-nowrap items-center border rounded-lg px-2 py-1 bg-white border-[#00000034] gap-2 w-full">
                 <input
                   type="text"
                   className="flex-1 min-w-0 w-full md:w-auto px-2 py-1 outline-none bg-transparent"
-                  placeholder="Keyword 1"
+                  placeholder="Detail 1"
                   value={keyword1}
                   onChange={e => setKeyword1(e.target.value)}
                   maxLength={20}
@@ -275,7 +275,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 <input
                   type="text"
                   className="flex-1 min-w-0 w-full md:w-auto px-2 py-1 outline-none bg-transparent"
-                  placeholder="Keyword 2"
+                  placeholder="Detail 2"
                   value={keyword2}
                   onChange={e => setKeyword2(e.target.value)}
                   maxLength={20}
@@ -284,13 +284,12 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 <input
                   type="text"
                   className="flex-1 min-w-0 w-full md:w-auto px-2 py-1 outline-none bg-transparent"
-                  placeholder="Keyword 3"
+                  placeholder="Detail 3"
                   value={keyword3}
                   onChange={e => setKeyword3(e.target.value)}
                   maxLength={20}
                 />
               </div>
-              <span className="text-gray-500 text-xs mt-1 block">Enter up to 3 keywords</span>
             </div>
           </div>
           <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
@@ -398,11 +397,10 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             className={`form-control text-dark ${errors.tags ? 'border-red-500' : ''}`} 
             type="text" 
             id="tags" 
-            placeholder="Enter tags separated by commas" 
+            placeholder="Add tags separated by commas" 
             value={tags}
             onChange={e => setTags(e.target.value)}
           />
-          <span className="text-gray-500 text-xs mt-1 block">Example: electronics, gaming, premium</span>
           {errors.tags && <p className="text-red-500 text-sm mt-1">{errors.tags}</p>}
         </div>
 

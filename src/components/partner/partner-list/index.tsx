@@ -16,13 +16,15 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/router";
 
 const PartnerList: React.FC = () => {
-  const [usersData, setUsersData] = useState<any[]>([]);
+  const [partnersData, setPartnersData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const fetchUsers = async () => {
+  const fetchPartners = async () => {
+    setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const users = querySnapshot.docs.map((doc) => {
+      const querySnapshot = await getDocs(collection(db, "partners"));
+      const partners = querySnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -35,33 +37,56 @@ const PartnerList: React.FC = () => {
           thumbnail: data.profilePicture || null,
         };
       });
-      setUsersData(users);
+      setPartnersData(partners);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Error fetching users data");
+      console.error("Error fetching partners:", error);
+      toast.error("Error fetching partners data");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchPartners();
   }, []);
 
   const handleBlock = async (id: string) => {
-    await updateDoc(doc(db, "users", id), { isBanned: true });
-    fetchUsers();
-    toast.success("Partner blocked successfully!");
+    try {
+      setLoading(true);
+      await updateDoc(doc(db, "partners", id), { isBanned: true });
+      await fetchPartners();
+      toast.success("Partner blocked successfully!");
+    } catch (error) {
+      toast.error("Failed to block partner.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUnblock = async (id: string) => {
-    await updateDoc(doc(db, "users", id), { isBanned: false });
-    fetchUsers();
-    toast.success("Partner unblocked successfully!");
+    try {
+      setLoading(true);
+      await updateDoc(doc(db, "partners", id), { isBanned: false });
+      await fetchPartners();
+      toast.success("Partner unblocked successfully!");
+    } catch (error) {
+      toast.error("Failed to unblock partner.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSuspend = async (id: string) => {
-    await deleteDoc(doc(db, "users", id));
-    fetchUsers();
-    toast.success("Partner suspended successfully!");
+    try {
+      setLoading(true);
+      await deleteDoc(doc(db, "partners", id));
+      await fetchPartners();
+      toast.success("Partner suspended successfully!");
+    } catch (error) {
+      toast.error("Failed to suspend partner.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (id: string) => {
@@ -70,20 +95,24 @@ const PartnerList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteData("users", id, (message: string) => {
+      setLoading(true);
+      await deleteData("partners", id, (message: string) => {
         toast(message);
       });
-      setUsersData((prevData) => prevData.filter((item) => item.id !== id));
+      setPartnersData((prevData) => prevData.filter((item) => item.id !== id));
     } catch (error) {
       toast.error("Error deleting partner. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="user-list">
+      {loading && <div style={{ textAlign: 'center', margin: '20px 0' }}>Loading...</div>}
       <PartnerTable
         heading="Partners List"
-        items={usersData}
+        items={partnersData}
         onBlock={handleBlock}
         onUnblock={handleUnblock}
         onSuspend={handleSuspend}

@@ -6,7 +6,7 @@ interface Option {
   id: string;
   title: string;
   image: string;
-  qty: number;
+  quantityAvailable: string;
 }
 interface SmallTableProps {
     options: Array<Option>
@@ -58,8 +58,8 @@ console.log(options)
                 <table className="w-full mt-2">
                 <tbody className="divide-y divide-[#D9DADF]">
                     {options.map(item => {
-                        const stockStatus = getStockStatus(item.qty);
-                        console.log(item.qty)
+                        const stockStatus = getStockStatus(parseInt(item.quantityAvailable));
+                        console.log("quantityAvailable", item)
                         return (
                             <tr key={item.id}>
                                 <td className="p-3">
@@ -77,8 +77,8 @@ console.log(options)
                                 </td>
                                 <td className="p-3">
                                     <strong className="text-sm font-medium text-dark block line-clamp-1">{limitWords(item.title)}</strong>
-                                    <p className="text-sm text-normal text-gray">Remaining Quantity :
-                                        {item.qty}
+                                    <p className="text-sm text-normal text-gray">Remaining Quantity : 
+                                        {item.quantityAvailable}
                                     </p>
                                 </td>
                                 <td className="p-3">

@@ -7,24 +7,25 @@ import * as yup from "yup";
 import Image from "next/image";
 import Link from "next/link";
 import { uploadImageToFirebase } from "../../../../service/uploadImage";
-import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "../../../../config/firebase.config";
 import { toast } from "react-toastify";
 import ImageSelectionModal from "../../game-image-library/ImageSelectionModal";
 import PrizeSelectionModal from "../../prize-image-library/PrizeSelectionModal";
+import { useRouter } from "next/router";
+import { fetchSingleData, fetchUsers } from "../../../../utility";
+import { addGameToSponsor } from '../../../../service/sponsorService';
 
 interface UploadedFile {
   url: string;
 }
 
+// Use the same ImageData interface as ImageSelectionModal
 interface ImageData {
   id: string;
   title: string;
-  remainingQuantity: number;
-  stockQuality: string;
   imageUrl: string;
-  category: string;
-  description: string;
+  gameCategory: string;
 }
 
 export interface FormData {
@@ -136,6 +137,23 @@ const TicketPriceSelect = ({ value, onChange, disabled }: { value: number; onCha
   );
 };
 
+function getRaffleStatus(raffle: any) {
+  const now = new Date();
+  const getDate = (val: any) => {
+    if (!val) return new Date(0);
+    if (typeof val.toDate === 'function') return val.toDate();
+    return new Date(val);
+  };
+  const createdAt = getDate(raffle.createdAt);
+  const expiryDate = getDate(raffle.expiryDate);
+  const status = (raffle.status || "").toLowerCase();
+  if (["refunded", "end early", "inactive"].includes(status)) return "Ended";
+  if (expiryDate < now) return "Ended";
+  if (createdAt > now) return "Pending";
+  if (createdAt <= now && expiryDate > now) return "Live";
+  return "Pending";
+}
+
 const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSubmit }) => {
   const [file, setFile] = useState<UploadedFile | null>(
     initialData?.picture ? { url: initialData.picture } : null
@@ -150,6 +168,13 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   const [prizeKeywords, setPrizeKeywords] = useState<string[]>([]);
   const [actionModal, setActionModal] = useState<{ type: 'extend' | 'refund' | 'endEarly' | null, open: boolean }>({ type: null, open: false });
   const [extendDate, setExtendDate] = useState("");
+  const [gameImages, setGameImages] = useState<ImageData[]>([]);
+  const [gameCategories, setGameCategories] = useState<string[]>([]);
+  const router = useRouter();
+  const [prizeLoading, setPrizeLoading] = useState(false);
+  const [prizeError, setPrizeError] = useState<string | null>(null);
+  const [allPrizes, setAllPrizes] = useState<any[]>([]);
+  const [computedStatus, setComputedStatus] = useState<string>("Pending");
 
   const {
     register,
@@ -176,6 +201,80 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     }
   }, [initialData, reset]);
 
+  useEffect(() => {
+    // Fetch all prizes on mount
+    const fetchAllPrizes = async () => {
+      try {
+        const prizes = await fetchUsers("prize_database");
+        setAllPrizes(prizes);
+      } catch (error) {
+        console.error("Error fetching all prizes:", error);
+      }
+    };
+    fetchAllPrizes();
+  }, []);
+
+  useEffect(() => {
+    const { prizeId } = router.query;
+    if (prizeId && typeof prizeId === 'string' && allPrizes.length > 0) {
+      setPrizeLoading(true);
+      setPrizeError(null);
+      const prize = allPrizes.find(p => p.id === prizeId);
+      if (prize) {
+        setSelectedPrize(prize);
+        setSelectedPrizeId(prizeId);
+        setSelectedPrizePrice(prize.retailValueUSD || null);
+        setValue("description", prize.prizeName || "");
+        if (prize.keywords && Array.isArray(prize.keywords) && prize.keywords.length) {
+          setPrizeKeywords([
+            prize.keywords[0] || "Keyword 1",
+            prize.keywords[1] || "Keyword 2",
+            prize.keywords[2] || "Keyword 3",
+          ]);
+        } else {
+          setPrizeKeywords(["Keyword 1", "Keyword 2", "Keyword 3"]);
+        }
+      } else {
+        setPrizeError("Prize not found for the provided prizeId.");
+      }
+      setPrizeLoading(false);
+    }
+  }, [router.query, allPrizes, setValue]);
+
+  useEffect(() => {
+    // Fetch game images from Firestore
+    const fetchGameImages = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "image_library"));
+        const images: ImageData[] = [];
+        const categoriesSet = new Set<string>();
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const image: ImageData = {
+            id: doc.id,
+            title: data.title || "",
+            imageUrl: data.imageUrl || "",
+            gameCategory: data.gameCategory || "",
+          };
+          images.push(image);
+          if (image.gameCategory) {
+            categoriesSet.add(image.gameCategory);
+          }
+        });
+        setGameImages(images);
+        setGameCategories(Array.from(categoriesSet));
+      } catch (error) {
+        console.error('Error fetching game images:', error);
+      }
+    };
+    fetchGameImages();
+  }, []);
+
+  useEffect(() => {
+    // Compute status whenever form values change
+    setComputedStatus(getRaffleStatus(watchedValues));
+  }, [watchedValues]);
+
   // Log all form values to console whenever they change
   useEffect(() => {
     console.log("Form Values Updated:", {
@@ -193,6 +292,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
 
   const handleImageSelect = (image: ImageData) => {
     setFile({ url: image.imageUrl });
+    setValue('category', image.gameCategory || '');
     console.log("Image selected from library:", image.title);
   };
 
@@ -230,37 +330,36 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
       console.log("Raw Form Data:", data);
       console.log("File:", file?.url);
 
-      const formData: FormData & { prizeId?: string; ticketPrice?: string } = {
+      // If prize has sponsorId, add it to the raffle
+      let sponsorId = undefined;
+      if (selectedPrize && selectedPrize.sponsorId) {
+        sponsorId = selectedPrize.sponsorId;
+      }
+
+      const formData: FormData & { prizeId?: string; ticketPrice?: string; sponsorId?: string } = {
         ...data,
         picture: file?.url || "",
         createdAt: new Date(data.createdAt).toISOString(),
         expiryDate: new Date(data.expiryDate).toISOString(),
         prizeId: selectedPrizeId || undefined,
         ticketPrice: selectedPrizePrice || undefined,
+        ...(sponsorId ? { sponsorId } : {}),
       };
 
       console.log("=== FINAL FORM DATA TO SUBMIT ===");
       console.log(JSON.stringify(formData, null, 2));
       console.log("=== FORM SUBMISSION COMPLETE ===");
 
-      // Create new document
-      const docRef = await addDoc(collection(db, "raffles"), formData);
-
-      // Update with document ID
-      await updateDoc(doc(db, "raffles", docRef.id), { id: docRef.id });
-      
-      toast.success("Raffle successfully created!");
-      console.log("Raffle created with ID:", docRef.id);
+      // Only call onSubmit, do not create document here
+      if (onSubmit) {
+        await onSubmit(formData);
+      }
 
       reset();
       setFile(null);
       setSelectedPrize(null);
       setSelectedPrizeId(null);
       setSelectedPrizePrice(null);
-      
-      if (onSubmit) {
-        onSubmit(formData);
-      }
       
     } catch (error) {
       console.error("Error creating raffle:", error);
@@ -294,26 +393,24 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     setActionModal({ type: null, open: false });
   };
 
-  // Helper to determine edit mode and live/end status
-  const isEditMode = formHeading.includes("Edit");
-  // Type guard for Firebase Timestamp
-  const isTimestamp = (val: any): val is { seconds: number; nanoseconds: number } =>
-    val && typeof val === 'object' && typeof val.seconds === 'number' && typeof val.nanoseconds === 'number';
-  const isLive = (() => {
-    if (!isEditMode || !watchedValues?.createdAt) return false;
-    let createdAtDate: Date | null = null;
-    if (isTimestamp(watchedValues.createdAt)) {
-      createdAtDate = new Date(watchedValues.createdAt.seconds * 1000);
-    } else if (typeof watchedValues.createdAt === "string") {
-      createdAtDate = new Date(watchedValues.createdAt);
-    }
-    if (!createdAtDate) return false;
-    return createdAtDate < new Date();
-  })();
-  const isEnded = watchedValues.status === "Ended";
+  // Helper for field disabling (only restrict in Edit mode)
+  const isEdit = formHeading.includes("Edit");
+  const isPending = isEdit && computedStatus === "Pending";
+  const isLive = isEdit && computedStatus === "Live";
+  const isEnded = isEdit && computedStatus === "Ended";
 
   return (
     <>
+      {prizeLoading && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-center">
+          Loading prize details...
+        </div>
+      )}
+      {prizeError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-center">
+          {prizeError}
+        </div>
+      )}
       {isSubmitting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
           <div className="flex flex-col items-center">
@@ -339,13 +436,13 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             <div className="form-group">
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title*</label>
               <input
-                className={`form-control ${errors.title ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                className={`form-control ${errors.title ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                 type="text"
                 id="title"
                 placeholder="Enter game title"
                 {...register("title")}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                disabled={isLive}
+                disabled={isLive || isEnded}
               />
               {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
             </div>
@@ -353,15 +450,15 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Prize*</label>
               <div className="flex gap-2">
                 <input
-                  className={`form-control ${errors.description ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                  className={`form-control ${errors.description ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                   type="text"
                   id="description"
                   placeholder="Select prize from library"
                   value={selectedPrize ? selectedPrize.prizeName : watchedValues.description}
                   readOnly
-                  onClick={() => !isLive ? setIsPrizeModalOpen(true) : null}
-                  style={{ cursor: isLive ? 'not-allowed' : 'pointer' }}
-                  disabled={isLive}
+                  onClick={() => !isLive && !isEnded ? setIsPrizeModalOpen(true) : null}
+                  style={{ cursor: isLive || isEnded ? 'not-allowed' : 'pointer' }}
+                  disabled={isLive || isEnded}
                 />
               </div>
               {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
@@ -379,9 +476,9 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
               </div>
               <button
                 type="button"
-                className={`mt-2 px-3 py-1 bg-gray-100 rounded text-xs${isLive ? ' opacity-70 cursor-not-allowed' : ''}`}
+                className={`mt-2 px-3 py-1 bg-gray-100 rounded text-xs${isLive || isEnded ? ' opacity-70 cursor-not-allowed' : ''}`}
                 onClick={() => console.log("Prize:", selectedPrize, "Keywords:", prizeKeywords)}
-                disabled={isLive}
+                disabled={isLive || isEnded}
               >
                 Log Prize & Keywords
               </button>
@@ -405,9 +502,9 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                       <button
                         onClick={removeFile}
                         type="button"
-                        className={`absolute top-2 right-2 bg-white text-gray-700 rounded-full shadow h-5 w-5 hover:bg-gray-100 transition-colors${isLive ? ' opacity-70 cursor-not-allowed' : ''}`}
+                        className={`absolute top-2 right-2 bg-white text-gray-700 rounded-full shadow h-5 w-5 hover:bg-gray-100 transition-colors${isLive || isEnded ? ' opacity-70 cursor-not-allowed' : ''}`}
                         aria-label="Remove file"
-                        disabled={isLive}
+                        disabled={isLive || isEnded}
                       >
                         ✕
                       </button>
@@ -428,8 +525,8 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                 <button
                   type="button"
                   onClick={() => setIsImageModalOpen(true)}
-                  className={`cursor-pointer !flex flex-col justify-center items-center text-center py-8 border-2 border-dashed border-[#D0D5DD] rounded-lg hover:border-primary hover:bg-gray-50 transition-colors w-full${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
-                  disabled={isLive}
+                  className={`cursor-pointer !flex flex-col justify-center items-center text-center py-8 border-2 border-dashed border-[#D0D5DD] rounded-lg hover:border-primary hover:bg-gray-50 transition-colors w-full${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                  disabled={isLive || isEnded}
                 >
                   <Image src="/images/icon/upload-icon.png" alt="icon" height={40} width={40} />
                   <span className="mt-3 text-sm font-normal text-gray block">
@@ -458,7 +555,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
               <TicketPriceSelect
                 value={watchedValues.ticketPrice}
                 onChange={v => handleInputChange("ticketPrice", v)}
-                disabled={isLive}
+                disabled={isLive || isEnded}
               />
               {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
             </div>
@@ -466,28 +563,28 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category*</label>
               <select 
                 id="category" 
-                className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`} 
+                className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`} 
                 {...register("category")}
                 onChange={(e) => handleInputChange("category", e.target.value)}
-                disabled={isLive}
+                disabled={isLive || isEnded}
               >
                 <option value="" selected>Select Category</option>
-                <option value="Soccer">Soccer</option>
-                <option value="Cricket">Cricket</option>
-                <option value="Basketball">Basketball</option>
+                {gameCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
               {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
               <input
-                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                 type="text"
                 id="gameDescription"
                 placeholder="Enter game description"
                 {...register("gameDescription")}
                 onChange={(e) => handleInputChange("gameDescription", e.target.value)}
-                disabled={isLive}
+                disabled={isLive || isEnded}
               />
               {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
             </div>
@@ -497,26 +594,26 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             <div className="form-group">
               <label htmlFor="createdAt" className="block text-sm font-medium text-gray-700 mb-1">Start Date*</label>
               <input
-                className={`form-control ${errors.createdAt ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                className={`form-control ${errors.createdAt ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                 type="date"
                 id="createdAt"
                 min={getCurrentDate()}
                 {...register("createdAt")}
                 onChange={(e) => handleInputChange("createdAt", e.target.value)}
-                disabled={isLive}
+                disabled={isLive || isEnded}
               />
               {errors.createdAt && <p className="text-red-500 text-sm mt-1">{errors.createdAt.message}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">End Date*</label>
               <input
-                className={`form-control ${errors.expiryDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                className={`form-control ${errors.expiryDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                 type="date"
                 id="expiryDate"
                 min={getCurrentDate()}
                 {...register("expiryDate")}
                 onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                disabled={isLive}
+                disabled={isEnded || isPending}
               />
               {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate.message}</p>}
             </div>
@@ -529,10 +626,10 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">Status*</label>
                 <select 
                   id="status" 
-                  className={`form-control ${errors.status ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`} 
+                  className={`form-control ${errors.status ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
                   {...register("status")}
                   onChange={(e) => handleInputChange("status", e.target.value)}
-                  disabled={isLive}
+                  disabled={isEnded || isPending}
                 >
                   <option value="">Select Status</option>
                   <option value="Active">Active</option>
@@ -546,6 +643,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="button"
                   className={`w-full sm:w-auto px-4 py-2 rounded bg-[#72EA5A] text-black font-medium hover:bg-[#65D351] transition-colors`}
                   onClick={handleExtend}
+                  disabled={isEnded || isPending}
                 >
                   Extend
                 </button>
@@ -553,6 +651,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="button"
                   className={`w-full sm:w-auto px-4 py-2 rounded bg-[#FF9500] text-white font-medium hover:bg-[#E6352B] transition-colors`}
                   onClick={handleRefund}
+                  disabled={isEnded || isPending}
                 >
                   Refund
                 </button>
@@ -560,6 +659,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="button"
                   className={`w-full sm:w-auto px-4 py-2 rounded bg-[#D12A2A] text-white font-medium hover:bg-[#6A1515] transition-colors`}
                   onClick={handleEndEarly}
+                  disabled={isEnded || isPending}
                 >
                   End Early
                 </button>
@@ -577,7 +677,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             <button
               type="submit"
               className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
-              disabled={isSubmitting}
+              disabled={isEnded}
             >
               {isSubmitting ? (
                 <span className="flex items-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Saving...</span>
@@ -591,12 +691,14 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
         isOpen={isImageModalOpen}
         onClose={() => setIsImageModalOpen(false)}
         onSelectImage={handleImageSelect}
+        images={gameImages}
       />
 
       <PrizeSelectionModal
         isOpen={isPrizeModalOpen}
         onClose={() => setIsPrizeModalOpen(false)}
         onSelectPrize={handlePrizeSelect}
+        prizes={allPrizes}
       />
 
       {/* Action Modal */}

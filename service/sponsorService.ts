@@ -1,5 +1,5 @@
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, getDocs, updateDoc, doc, arrayUnion } from "firebase/firestore";
+import { collection, addDoc, getDocs, updateDoc, doc, arrayUnion, deleteDoc } from "firebase/firestore";
 import { db } from "../config/firebase.config";
 
 export interface Sponsor {
@@ -45,10 +45,24 @@ export const getSponsors = async (): Promise<Sponsor[]> => {
     .filter(sponsor => sponsor.status === "Active") as Sponsor[];
 };
 
-// Add a prize/game ID to a sponsor's gamesCreation array
+// Add a prize ID to a sponsor's gamesCreation array
 export const addGameToSponsor = async (sponsorId: string, gameId: string): Promise<void> => {
+  const sponsorDoc = doc(db, "sponsors", sponsorId);
+  await updateDoc(sponsorDoc, {
+    gamesCreation: arrayUnion(gameId),
+  });
+};
+
+// Add a prize ID to a sponsor's gamesCreation array
+export const addPrizeToSponsor = async (sponsorId: string, gameId: string): Promise<void> => {
   const sponsorDoc = doc(db, "sponsors", sponsorId);
   await updateDoc(sponsorDoc, {
     prizesCreation: arrayUnion(gameId),
   });
+};
+
+// Delete a sponsor from Firestore
+export const deleteSponsor = async (sponsorId: string): Promise<void> => {
+  const sponsorDoc = doc(db, "sponsors", sponsorId);
+  await deleteDoc(sponsorDoc);
 }; 

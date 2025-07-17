@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import UserForm, { FormData } from "../form";
 import { toast } from "react-toastify";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -7,7 +7,10 @@ import { v4 as uuidv4 } from "uuid";
 import { db, storage } from "../../../../config/firebase.config";
 
 const CreateUser = () => {
+  const [loading, setLoading] = useState(false);
+
   const handleCreateUser = async (formData: FormData, file?: File | null) => {
+    setLoading(true);
     try {
       let profilePictureUrl = "";
 
@@ -17,7 +20,7 @@ const CreateUser = () => {
         profilePictureUrl = await getDownloadURL(storageRef);
       }
 
-      const newUser = {
+      const newPartner = {
         uid: uuidv4(),
         name: formData.name,
         email: formData.email,
@@ -30,15 +33,17 @@ const CreateUser = () => {
         createdAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "users"), newUser);
-      toast.success("User created successfully!");
+      await addDoc(collection(db, "partners"), newPartner);
+      toast.success("Partner created successfully!");
     } catch (error) {
-      console.error("Error creating user:", error);
-      toast.error("Failed to create user.");
+      console.error("Error creating partner:", error);
+      toast.error("Failed to create partner.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  return <UserForm formHeading="Create Partner" onSubmit={handleCreateUser} />;
+  return <div>{loading && <div style={{ textAlign: 'center', margin: '20px 0' }}>Loading...</div>}<UserForm formHeading="Create Partner" onSubmit={handleCreateUser} /></div>;
 };
 
 export default CreateUser;

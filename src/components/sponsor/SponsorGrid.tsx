@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { getSponsors, Sponsor } from "../../../service/sponsorService";
+import { getSponsors, Sponsor, uploadSponsorImages, deleteSponsor } from "../../../service/sponsorService";
 import Dropdown from "../common/dropdown";
 import ConfirmationModal from "../common/modal";
 import Image from "next/image";
 import { useRouter } from "next/router";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../../config/firebase.config";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const SponsorGrid: React.FC = () => {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -12,6 +16,10 @@ const SponsorGrid: React.FC = () => {
   const [selectedSponsorId, setSelectedSponsorId] = useState<string | null>(null);
   const [viewModal, setViewModal] = useState<{ open: boolean; sponsor: Sponsor | null }>({ open: false, sponsor: null });
   const [editModal, setEditModal] = useState<{ open: boolean; sponsor: Sponsor | null }>({ open: false, sponsor: null });
+  const [editName, setEditName] = useState("");
+  const [editLogos, setEditLogos] = useState<File[]>([]);
+  const [editLogoPreviews, setEditLogoPreviews] = useState<string[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,10 +41,17 @@ const SponsorGrid: React.FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    // TODO: Implement delete logic
-    setIsDeleteModalOpen(false);
-    setSelectedSponsorId(null);
-    fetchSponsors();
+    if (!selectedSponsorId) return;
+    try {
+      await deleteSponsor(selectedSponsorId);
+      toast.success("Sponsor deleted successfully!");
+    } catch (error) {
+      toast.error("Failed to delete sponsor. Please try again.");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSelectedSponsorId(null);
+      fetchSponsors();
+    }
   };
 
   const handleView = (sponsor: Sponsor) => {
@@ -45,14 +60,49 @@ const SponsorGrid: React.FC = () => {
 
   const handleEdit = (sponsor: Sponsor) => {
     setEditModal({ open: true, sponsor });
+    setEditName(sponsor.sponsorName);
+    setEditLogos([]);
+    setEditLogoPreviews([]);
   };
 
   const handleThumbnailClick = (id: string) => {
     router.push(`/sponsor-library/view/${id}`);
   };
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files).slice(0, 2) : [];
+    setEditLogos(files);
+    setEditLogoPreviews(files.map(file => URL.createObjectURL(file)));
+  };
+
+  const handleEditSave = async () => {
+    if (!editModal.sponsor) return;
+    setEditLoading(true);
+    try {
+      let logoUrls = editModal.sponsor.logo;
+      if (editLogos.length > 0) {
+        logoUrls = await uploadSponsorImages(editLogos);
+      }
+      const docRef = doc(db, "sponsors", editModal.sponsor.id);
+      await updateDoc(docRef, {
+        sponsorName: editName,
+        logo: logoUrls,
+      });
+      toast.success("Sponsor updated successfully!");
+      setEditModal({ open: false, sponsor: null });
+      setEditLogos([]);
+      setEditLogoPreviews([]);
+      fetchSponsors();
+    } catch (error) {
+      toast.error("Failed to update sponsor. Please try again.");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-[18px] font-semibold text-dark">Sponsor Library</h1>
         <button className="inline-flex items-center gap-2 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
@@ -68,8 +118,6 @@ const SponsorGrid: React.FC = () => {
             key={sponsor.id}
             className=" flex flex-col items-center group min-h-[210px]"
           >
-            
-
             {/* Thumbnail */}
             <div
               className="w-[100%] h-[100%] rounded-t-xl bg-white border-2 border-gray-500 flex items-center justify-center mb-4 cursor-pointer relative"
@@ -115,20 +163,18 @@ const SponsorGrid: React.FC = () => {
           <div className="bg-white rounded-xl max-w-md w-full p-6 border border-[#D0D5DD] relative">
             <button className="absolute right-4 top-4 text-gray-400 hover:text-gray-600" onClick={() => setViewModal({ open: false, sponsor: null })}>&times;</button>
             <div className="flex flex-col items-center">
-              <div className="w-24 h-24 rounded-full border border-[#D0D5DD] overflow-hidden mb-4 bg-gray-50 flex items-center justify-center">
-                {viewModal.sponsor.logo && viewModal.sponsor.logo[0] ? (
-                  <Image src={viewModal.sponsor.logo[0]} alt={viewModal.sponsor.sponsorName} width={96} height={96} className="object-contain w-full h-full" />
+              <div className="flex gap-2 mb-4">
+                {viewModal.sponsor.logo && viewModal.sponsor.logo.length > 0 ? (
+                  viewModal.sponsor.logo.map((logo, idx) => (
+                    <Image key={idx} src={logo} alt={`logo-${idx}`} width={200} height={200} className="object-contain rounded border" />
+                  ))
                 ) : (
                   <span className="text-gray-400 text-2xl">?</span>
                 )}
               </div>
               <div className="text-center">
-                <span className="text-lg font-semibold text-dark block mb-2">{viewModal.sponsor.sponsorName}</span>
-                <div className="flex flex-wrap gap-2 justify-center mt-2">
-                  {viewModal.sponsor.logo && viewModal.sponsor.logo.map((logo, idx) => (
-                    <Image key={idx} src={logo} alt={`logo-${idx}`} width={48} height={48} className="object-contain rounded border" />
-                  ))}
-                </div>
+                <span className="text-lg font-semibold text-dark block mb-2"> Sponsor Name: {viewModal.sponsor.sponsorName}</span>
+                <div className="text-gray-500 text-sm mt-2">Total Prizes: {viewModal.sponsor.prizesCreation ? viewModal.sponsor.prizesCreation.length : 0}</div>
               </div>
             </div>
           </div>
@@ -140,21 +186,43 @@ const SponsorGrid: React.FC = () => {
           <div className="bg-white rounded-xl max-w-md w-full p-6 border border-[#D0D5DD] relative">
             <button className="absolute right-4 top-4 text-gray-400 hover:text-gray-600" onClick={() => setEditModal({ open: false, sponsor: null })}>&times;</button>
             <div className="flex flex-col items-center">
-              <div className="w-24 h-24 rounded-full border border-[#D0D5DD] overflow-hidden mb-4 bg-gray-50 flex items-center justify-center">
-                {editModal.sponsor.logo && editModal.sponsor.logo[0] ? (
-                  <Image src={editModal.sponsor.logo[0]} alt={editModal.sponsor.sponsorName} width={96} height={96} className="object-contain w-full h-full" />
-                ) : (
-                  <span className="text-gray-400 text-2xl">?</span>
-                )}
+              <div className="flex gap-2 mb-4">
+                {/* Show previews for new logos, else current logos */}
+                {editLogoPreviews.length > 0
+                  ? editLogoPreviews.map((url, idx) => (
+                      <Image key={idx} src={url} alt={`preview-${idx}`} width={64} height={64} className="object-contain rounded border" />
+                    ))
+                  : editModal.sponsor.logo && editModal.sponsor.logo.length > 0
+                  ? editModal.sponsor.logo.map((logo, idx) => (
+                      <Image key={idx} src={logo} alt={`logo-${idx}`} width={64} height={64} className="object-contain rounded border" />
+                    ))
+                  : <span className="text-gray-400 text-2xl">?</span>
+                }
               </div>
               <div className="text-center w-full">
                 <input
                   className="form-control w-full text-lg font-semibold text-dark block mb-2 text-center border border-[#E4E7EC] rounded-lg px-2 py-1"
-                  value={editModal.sponsor.sponsorName}
-                  onChange={e => setEditModal(modal => modal.sponsor ? { ...modal, sponsor: { ...modal.sponsor, sponsorName: e.target.value } } : modal)}
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  disabled={editLoading}
                 />
-                {/* Add more editable fields as needed */}
-                <button className="mt-4 px-4 py-2 bg-primary text-white rounded" onClick={() => setEditModal({ open: false, sponsor: null })}>Save</button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleLogoChange}
+                  className="form-control w-full mb-2"
+                  disabled={editLoading || editLogoPreviews.length >= 2}
+                />
+                <button
+                  className="mt-4 px-4 py-2 bg-primary text-white rounded w-full"
+                  onClick={handleEditSave}
+                  disabled={editLoading}
+                >
+                  {editLoading ? (
+                    <span className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Saving...</span>
+                  ) : 'Save'}
+                </button>
               </div>
             </div>
           </div>

@@ -12,6 +12,7 @@ const EditPartner: React.FC = () => {
   const { id } = router.query;
   const [initialData, setInitialData] = useState<any | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -22,7 +23,7 @@ const EditPartner: React.FC = () => {
 
     try {
       setIsLoading(true);
-      const data = await fetchSingleData("users", id);
+      const data = await fetchSingleData("partners", id);
 
       if (data) {
         setInitialData(data);
@@ -44,6 +45,7 @@ const EditPartner: React.FC = () => {
       return;
     }
 
+    setUpdating(true);
     try {
       let profilePictureUrl = initialData.profilePicture;
 
@@ -59,16 +61,15 @@ const EditPartner: React.FC = () => {
         isBanned: formData.isBanned === "true"
       };
 
-      console.log("Updated Partner Data:", updatedPartnerData);
-      
-      await updatedData(updatedPartnerData, "users", (message: string) => {
+      await updatedData(updatedPartnerData, "partners", (message: string) => {
         toast(message);
       }, id);
-      
       router.push("./");
     } catch (error) {
       console.error("Error updating partner:", error);
       toast.error("Failed to update partner.");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -76,6 +77,7 @@ const EditPartner: React.FC = () => {
 
   return (
     <div>
+      {updating && <div style={{ textAlign: 'center', margin: '20px 0' }}>Updating...</div>}
       <UserForm
         formHeading="Edit Partner"
         initialData={initialData}

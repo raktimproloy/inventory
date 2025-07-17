@@ -19,6 +19,7 @@ interface RaffleTableProps {
   status: string;
   prizeImage?: string;
   prizeName?: string;
+  computedStatus?: string; // Added for computed status
 }
 
 interface RaffleTablePropsWithHeading {
@@ -125,6 +126,15 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
   };
   console.log(raffleDataList);
 
+  const getStatusColor = (status: string) => {
+    switch ((status || '').toLowerCase()) {
+      case 'live': return 'border-[#067647] text-[#067647]'; // green
+      case 'pending': return 'border-yellow-500 text-yellow-500'; // yellow
+      case 'ended': return 'border-red-500 text-red-500'; // red
+      default: return 'border-gray-400 text-gray-400';
+    }
+  };
+
   return (
     <>
       <div className="border border-[#D0D5DD] rounded-xl py-6 bg-white w-full">
@@ -212,14 +222,10 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
                   <td className="text-sm text-gray py-3 px-6">{formatDate(item.expiryDate)}</td>
                   <td className="text-sm text-gray py-3 px-6">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium border ${(item.status || "Active") === "Active"
-                          ? "border-[#D0D5DD] text-[#067647]"
-                          : "border-primary text-primary"
-                        }`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.computedStatus || "")}`}
                     >
-                      {item.status || "Active"}
+                      {item.computedStatus || "Pending"}
                     </span>
-
                   </td>
                   <td className="text-sm text-gray py-3 px-6">
                     <Dropdown
@@ -239,7 +245,7 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
           </table>
         </div>
 
-        {raffleDataList.length > 9 && (
+        {totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

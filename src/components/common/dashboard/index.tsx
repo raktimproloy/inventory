@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { getAllRaffles } from "../../../../service/raffleService";
 import { collection, getDocs, query, limit } from "firebase/firestore";
 import { db } from "../../../../config/firebase.config";
+import { getSponsors } from "../../../../service/sponsorService";
 
 export const fetchUser = async (collectionName: string, limitCount: number = 5) => {
   const collectionRef = collection(db, collectionName);
@@ -32,43 +33,116 @@ export interface RaffleItem {
 
 const Dashboard: React.FC<DashboardProps> = () => {
   const [inventoryData, setInventoryData] = useState<any[]>([]);
-  const [raffles, setRaffles] = useState<RaffleItem[]>([]);
+  const [raffles, setRaffles] = useState<any[]>([]);
+  const [sponsors, setSponsors] = useState<any[]>([]);
+  const [prizes, setPrizes] = useState<any[]>([]);
 
   useEffect(() => {
-    getTopInventory();
+    // Fetch all dashboard data in parallel
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch raffles, sponsors, prizes in parallel
+        const [raffleData, sponsorList, prizeSnapshot, topInventory] = await Promise.all([
+          getAllRaffles(10),
+          getSponsors(),
+          getDocs(collection(db, "prize_database")),
+          fetchUser("prize_database", 4)
+        ]);
+        setRaffles(raffleData);
+        setSponsors(sponsorList);
+        setPrizes(prizeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setInventoryData(topInventory);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast.error("Failed to fetch dashboard data.");
+      }
+    };
+    fetchDashboardData();
   }, []);
-
-  const getTopInventory = async () => {
-    try {
-      // Fetch top 5 items from the "Prize_Database" collection
-      const topInventory = await fetchUser("prize_database", 4); // Limit to 5 items
-      setInventoryData(topInventory);
-    } catch (error) {
-      console.error("Error fetching top inventory data:", error);
-      toast.error("Failed to fetch top inventory data.");
-    }
-  };
 
   // Transform inventory data for SmallTable
   const transformedInventoryData = inventoryData.map(item => ({
     id: item.id,
     title: item.prizeName || item.title,
     image: item.thumbnail || item.image,
-    qty: item.stockLevel || item.qty
+    quantityAvailable: item.stockLevel || item.quantityAvailable
   }));
 
-  // Transform raffles data for InventoryTable
-  const transformedRafflesData = raffles.map(item => ({
-    id: item.id,
-    title: item.title,
-    picture: item.image,
-    partner: "N/A",
-    description: item.description,
-    price: "0",
-    createdAt: { seconds: Date.now() / 1000, nanoseconds: 0 },
-    expiryDate: { seconds: Date.now() / 1000, nanoseconds: 0 },
-    status: "Active"
-  }));
+  // --- Raffle Sorting Logic ---
+  function getDate(val: any) {
+    if (!val) return new Date(0);
+    if (typeof val.toDate === 'function') return val.toDate();
+    if (typeof val === 'object' && val.seconds) return new Date(val.seconds * 1000);
+    return new Date(val);
+  }
+
+  const now = new Date();
+  const liveRaffles = raffles.filter((r: any) => {
+    const createdAt = getDate(r.createdAt);
+    const expiryDate = getDate(r.expiryDate);
+    return createdAt <= now && expiryDate > now;
+  });
+  const pendingRaffles = raffles.filter((r: any) => {
+    const createdAt = getDate(r.createdAt);
+    return createdAt > now;
+  });
+  const endedRaffles = raffles.filter((r: any) => {
+    const expiryDate = getDate(r.expiryDate);
+    return expiryDate <= now;
+  });
+
+  // 2 soonest ending (Live)
+  const soonestEnding = [...liveRaffles].sort((a, b) => getDate(a.expiryDate) - getDate(b.expiryDate)).slice(0, 2);
+  // 2 most recently started (Live)
+  const recentStarted = [...liveRaffles].sort((a, b) => getDate(b.createdAt) - getDate(a.createdAt)).slice(0, 2);
+  // 1 soonest starting (Pending)
+  const soonestPending = [...pendingRaffles].sort((a, b) => getDate(a.createdAt) - getDate(b.createdAt)).slice(0, 1);
+  // 1 most recently ended (Ended)
+  const mostRecentEnded = [...endedRaffles].sort((a, b) => getDate(b.expiryDate) - getDate(a.expiryDate)).slice(0, 1);
+
+  // Merge and deduplicate by id, keep order, max 5
+  let mergedRaffles = [...soonestEnding, ...recentStarted, ...soonestPending, ...mostRecentEnded]
+    .filter((item, idx, arr) => arr.findIndex(i => i.id === item.id) === idx);
+
+  // If less than 5, fill with more raffles (not already included)
+  if (mergedRaffles.length < 5) {
+    const extra = raffles.filter(r => !mergedRaffles.some(m => m.id === r.id)).slice(0, 5 - mergedRaffles.length);
+    mergedRaffles = [...mergedRaffles, ...extra];
+  }
+  mergedRaffles = mergedRaffles.slice(0, 5);
+
+  // Build sponsorId -> sponsorName map
+  const sponsorMap = sponsors.reduce((acc: Record<string, string>, sponsor: any) => {
+    acc[sponsor.id] = sponsor.sponsorName;
+    return acc;
+  }, {});
+  // Build prizeId -> prize map
+  const prizeMap = prizes.reduce((acc: Record<string, any>, prize: any) => {
+    acc[prize.id] = prize;
+    return acc;
+  }, {});
+
+  // Transform raffles data for GamesTable
+  const transformedRafflesData = mergedRaffles.map((item: any) => {
+    let price = 0;
+    let prizeName = "N/A";
+    if (item.prizeId && prizeMap[item.prizeId]) {
+      price = prizeMap[item.prizeId].retailValueUSD || 0;
+      prizeName = prizeMap[item.prizeId].prizeName || "N/A";
+    }
+    return {
+      id: item.id,
+      title: item.title,
+      picture: item.image,
+      partner: item.sponsorId ? sponsorMap[item.sponsorId] || "N/A" : "N/A",
+      description: prizeName,
+      price,
+      ticketSold: 0,
+      createdAt: item.createdAt,
+      expiryDate: item.expiryDate,
+      status: "Active"
+    };
+  });
 
   // Handle item deletion
   const handleDelete = async (id: string) => {
@@ -81,19 +155,6 @@ const Dashboard: React.FC<DashboardProps> = () => {
       toast.error("Error deleting item. Please try again.");
     }
   };
-
-  useEffect(() => {
-    const fetchRaffles = async () => {
-      try {
-        const data = await getAllRaffles(4);
-        setRaffles(data);
-      } catch (error) {
-        console.error("Error fetching raffles:", error);
-        toast.error("Failed to fetch raffles data.");
-      }
-    };
-    fetchRaffles();
-  }, []);
 
   return (
     <div className="grid xl:grid-cols-3 grid-cols-1 gap-6 mt-6">
