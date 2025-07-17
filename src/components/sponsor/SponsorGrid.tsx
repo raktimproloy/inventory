@@ -8,6 +8,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../../config/firebase.config";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Pagination from "../common/pagination";
 
 const SponsorGrid: React.FC = () => {
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
@@ -21,6 +22,8 @@ const SponsorGrid: React.FC = () => {
   const [editLogoPreviews, setEditLogoPreviews] = useState<string[]>([]);
   const [editLoading, setEditLoading] = useState(false);
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4; // You can adjust this as needed
 
   useEffect(() => {
     fetchSponsors();
@@ -100,6 +103,13 @@ const SponsorGrid: React.FC = () => {
     }
   };
 
+  // Calculate paginated sponsors
+  const totalPages = Math.ceil(sponsors.length / itemsPerPage);
+  const paginatedSponsors = sponsors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
       <ToastContainer position="top-right" autoClose={3000} />
@@ -113,7 +123,7 @@ const SponsorGrid: React.FC = () => {
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {sponsors.map((sponsor) => (
+        {paginatedSponsors.map((sponsor) => (
           <div
             key={sponsor.id}
             className=" flex flex-col items-center group min-h-[210px]"
@@ -150,6 +160,16 @@ const SponsorGrid: React.FC = () => {
           </div>
         ))}
       </div>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-center">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

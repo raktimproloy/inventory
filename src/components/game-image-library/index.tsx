@@ -5,6 +5,7 @@ import ConfirmationModal from "../common/modal";
 import Image from "next/image";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../../config/firebase.config";
+import Pagination from "../common/pagination";
 
 interface ImageData {
     id: string;
@@ -16,7 +17,7 @@ interface ImageData {
     description: string;
 }
 
-const IMAGES_PER_PAGE = 8;
+const IMAGES_PER_PAGE = 4;
 
 const ImageLibrary = () => {
     const [images, setImages] = useState<ImageData[]>([]);
@@ -159,29 +160,11 @@ const ImageLibrary = () => {
             {/* Pagination Controls */}
             {totalPages > 1 && (
                 <div className="flex justify-center items-center gap-2 mt-8">
-                    <button
-                        className="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50"
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                    >
-                        Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <button
-                            key={page}
-                            className={`px-3 py-1 rounded border ${currentPage === page ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300'}`}
-                            onClick={() => handlePageChange(page)}
-                        >
-                            {page}
-                        </button>
-                    ))}
-                    <button
-                        className="px-3 py-1 rounded border border-gray-300 bg-white text-gray-700 disabled:opacity-50"
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                    >
-                        Next
-                    </button>
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             )}
             {/* Delete Confirmation Modal */}
