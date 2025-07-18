@@ -170,7 +170,7 @@ const GameImageLibrary: React.FC = () => {
     );
 
     return (
-        <div className="relative">
+        <div className="relative border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
             <div className="flex justify-between items-center mb-4 relative">
                 <h1 className="text-[18px] font-semibold text-dark">Game Images</h1>
                 <div className="flex items-center space-x-2">
