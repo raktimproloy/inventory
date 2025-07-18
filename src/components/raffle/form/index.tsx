@@ -60,7 +60,17 @@ const validationSchema = yup.object().shape({
 
 const getCurrentDate = (): string => {
   const today = new Date();
+  // Adjust for local timezone offset
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
   return today.toISOString().split("T")[0];
+};
+
+const getTomorrowDate = (): string => {
+  const tomorrow = new Date();
+  // Adjust for local timezone offset
+  tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return tomorrow.toISOString().split("T")[0];
 };
 
 // TicketPriceSelect: custom select with search and info tooltip
@@ -188,6 +198,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
       status: "Active",
       category: "Gaming",
       createdAt: getCurrentDate(),
+      expiryDate: getTomorrowDate(),
     },
     resolver: yupResolver(validationSchema),
     mode: "onChange",
@@ -198,8 +209,38 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   useEffect(() => {
     if (initialData) {
       reset(initialData);
+      // Set file, selectedPrize, selectedPrizeId, selectedPrizePrice, and prizeKeywords from initialData if available
+      if (initialData.picture) setFile({ url: initialData.picture });
+      if ((initialData as any).prizeId && allPrizes.length > 0) {
+        const prize = allPrizes.find(p => p.id === (initialData as any).prizeId);
+        if (prize) {
+          setSelectedPrize(prize);
+          setSelectedPrizeId(prize.id);
+          setSelectedPrizePrice(prize.retailValueUSD || null);
+          setValue("description", prize.prizeName || "");
+          if (prize.keywords && Array.isArray(prize.keywords) && prize.keywords.length) {
+            setPrizeKeywords([
+              prize.keywords[0] || "Keyword 1",
+              prize.keywords[1] || "Keyword 2",
+              prize.keywords[2] || "Keyword 3",
+            ]);
+          } else {
+            setPrizeKeywords(["Keyword 1", "Keyword 2", "Keyword 3"]);
+          }
+        }
+      }
+    } else if (selectedPrize && selectedPrize.createdAt) {
+      // If creating and selectedPrize has createdAt, set it as default
+      const dateVal = selectedPrize.createdAt.seconds
+        ? new Date(selectedPrize.createdAt.seconds * 1000)
+        : new Date(selectedPrize.createdAt);
+      setValue("createdAt", dateVal.toISOString().split("T")[0]);
+      // Optionally, set expiryDate to createdAt + 1 day
+      const expiry = new Date(dateVal);
+      expiry.setDate(expiry.getDate() + 1);
+      setValue("expiryDate", expiry.toISOString().split("T")[0]);
     }
-  }, [initialData, reset]);
+  }, [initialData, reset, allPrizes, setValue, selectedPrize]);
 
   useEffect(() => {
     // Fetch all prizes on mount
@@ -382,13 +423,49 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     setActionModal({ type: 'extend', open: true });
   };
 
-  const handleActionConfirm = () => {
+  const handleActionConfirm = async () => {
     if (actionModal.type === 'extend') {
-      console.log('Extend confirmed. New end date:', extendDate);
+      // Update expiryDate in Firestore
+      try {
+        if (initialData && initialData.id && extendDate) {
+          const raffleDoc = doc(db, "raffles", initialData.id);
+          await updateDoc(raffleDoc, { expiryDate: new Date(extendDate) });
+          toast.success("Raffle end date extended!");
+          setValue("expiryDate", extendDate); // update form value as well
+        } else {
+          toast.error("Missing raffle ID or new end date.");
+        }
+      } catch (err) {
+        toast.error("Failed to extend raffle end date.");
+      }
     } else if (actionModal.type === 'refund') {
-      console.log('Refund confirmed.');
+      // Update status to 'refund' in Firestore
+      try {
+        if (initialData && initialData.id) {
+          const raffleDoc = doc(db, "raffles", initialData.id);
+          await updateDoc(raffleDoc, { status: 'refund' });
+          toast.success("Raffle status updated to refund!");
+          setValue("status", 'refund');
+        } else {
+          toast.error("Missing raffle ID.");
+        }
+      } catch (err) {
+        toast.error("Failed to update raffle status to refund.");
+      }
     } else if (actionModal.type === 'endEarly') {
-      console.log('End Early confirmed.');
+      // Update status to 'end early' in Firestore
+      try {
+        if (initialData && initialData.id) {
+          const raffleDoc = doc(db, "raffles", initialData.id);
+          await updateDoc(raffleDoc, { status: 'end early' });
+          toast.success("Raffle status updated to end early!");
+          setValue("status", 'end early');
+        } else {
+          toast.error("Missing raffle ID.");
+        }
+      } catch (err) {
+        toast.error("Failed to update raffle status to end early.");
+      }
     }
     setActionModal({ type: null, open: false });
   };
@@ -399,6 +476,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   const isLive = isEdit && computedStatus === "Live";
   const isEnded = isEdit && computedStatus === "Ended";
 
+  console.log(selectedPrize)
   return (
     <>
       {prizeLoading && (
@@ -610,10 +688,10 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                 className={`form-control ${errors.expiryDate ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                 type="date"
                 id="expiryDate"
-                min={getCurrentDate()}
+                min={watchedValues.createdAt || getCurrentDate()}
                 {...register("expiryDate")}
                 onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                disabled={isEnded || isPending}
+                disabled={isLive || isEnded }
               />
               {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate.message}</p>}
             </div>
@@ -629,7 +707,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   className={`form-control ${errors.status ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
                   {...register("status")}
                   onChange={(e) => handleInputChange("status", e.target.value)}
-                  disabled={isEnded || isPending}
+                  disabled={isLive || isEnded}
                 >
                   <option value="">Select Status</option>
                   <option value="Active">Active</option>
@@ -643,7 +721,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="button"
                   className={`w-full sm:w-auto px-4 py-2 rounded bg-[#72EA5A] text-black font-medium hover:bg-[#65D351] transition-colors`}
                   onClick={handleExtend}
-                  disabled={isEnded || isPending}
+                  disabled={false}
                 >
                   Extend
                 </button>
@@ -651,7 +729,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="button"
                   className={`w-full sm:w-auto px-4 py-2 rounded bg-[#FF9500] text-white font-medium hover:bg-[#E6352B] transition-colors`}
                   onClick={handleRefund}
-                  disabled={isEnded || isPending}
+                  disabled={false}
                 >
                   Refund
                 </button>
@@ -659,7 +737,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                   type="button"
                   className={`w-full sm:w-auto px-4 py-2 rounded bg-[#D12A2A] text-white font-medium hover:bg-[#6A1515] transition-colors`}
                   onClick={handleEndEarly}
-                  disabled={isEnded || isPending}
+                  disabled={false}
                 >
                   End Early
                 </button>
@@ -709,13 +787,32 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
         onConfirm={handleActionConfirm}
         extendDate={extendDate}
         setExtendDate={setExtendDate}
+        expiryDate={watchedValues.expiryDate}
+        createdAt={watchedValues.createdAt}
       />
     </>
   );
 };
 
-const ActionModal = ({ open, onClose, type, onConfirm, extendDate, setExtendDate }: any) => {
+const ActionModal = ({ open, onClose, type, onConfirm, extendDate, setExtendDate, expiryDate, createdAt }: any) => {
   if (!open) return null;
+  // Determine the minimum date for extension: use expiryDate if available, else createdAt, else today
+  let minExtendDate = '';
+  let defaultExtendDate = '';
+  if (expiryDate) {
+    minExtendDate = typeof expiryDate === 'string' ? expiryDate : (expiryDate.toISOString ? expiryDate.toISOString().split('T')[0] : '');
+    defaultExtendDate = minExtendDate;
+  } else if (createdAt) {
+    minExtendDate = typeof createdAt === 'string' ? createdAt : (createdAt.toISOString ? createdAt.toISOString().split('T')[0] : '');
+    defaultExtendDate = minExtendDate;
+  } else {
+    minExtendDate = getCurrentDate();
+    defaultExtendDate = minExtendDate;
+  }
+  // Set default value for extendDate if not set
+  React.useEffect(() => {
+    if (!extendDate) setExtendDate(defaultExtendDate);
+  }, [defaultExtendDate, extendDate, setExtendDate]);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
       <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-auto p-6 relative">
@@ -729,6 +826,7 @@ const ActionModal = ({ open, onClose, type, onConfirm, extendDate, setExtendDate
               type="date"
               className="form-control mb-4"
               value={extendDate}
+              min={minExtendDate}
               onChange={e => setExtendDate(e.target.value)}
             />
           </div>

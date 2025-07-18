@@ -28,6 +28,9 @@ export const getAllRaffles = async (limitCount = 4): Promise<RaffleItem[]> => {
       description: data.description || "",
       createdAt: data.createdAt,
       expiryDate: data.expiryDate,
+      prizeId: data.prizeId,         // <-- ADD THIS
+      sponsorId: data.sponsorId,     // <-- ADD THIS
+      // add any other fields you need
     };
   });
 };

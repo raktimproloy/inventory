@@ -37,10 +37,74 @@ const UserTable: React.FC<UserTableProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState({
+    name: '',
+    email: '',
+    status: '',
+    access: '',
+    kyc: '',
+  });
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  // Sorting logic
+  const sortedItems = React.useMemo(() => {
+    let sortable = [...items];
+    if (sortConfig !== null) {
+      const keyMap: Record<string, (item: User) => string | number> = {
+        userName: (item) => item.userName || '',
+        email: (item) => item.email || '',
+        access: (item) => item.access || '',
+        registrationDate: (item) => item.registrationDate || '',
+        status: (item) => item.status || '',
+        kycRequest: (item) => item.kycRequest || '',
+      };
+      const getValue = keyMap[sortConfig.key];
+      sortable.sort((a, b) => {
+        let aValue = getValue ? getValue(a) : '';
+        let bValue = getValue ? getValue(b) : '';
+        // For registrationDate, compare as date
+        if (sortConfig.key === 'registrationDate') {
+          aValue = new Date(aValue as string).getTime();
+          bValue = new Date(bValue as string).getTime();
+        } else {
+          aValue = aValue.toString().toLowerCase();
+          bValue = bValue.toString().toLowerCase();
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortable;
+  }, [items, sortConfig]);
+
+  // Filtering logic
+  const filteredItems = React.useMemo(() => {
+    let data = [...sortedItems];
+    if (filter.name) {
+      const search = filter.name.toLowerCase();
+      data = data.filter(item => item.userName && item.userName.toLowerCase().includes(search));
+    }
+    if (filter.email) {
+      const search = filter.email.toLowerCase();
+      data = data.filter(item => item.email && item.email.toLowerCase().includes(search));
+    }
+    if (filter.status) {
+      data = data.filter(item => item.status === filter.status);
+    }
+    if (filter.access) {
+      data = data.filter(item => item.access === filter.access);
+    }
+    if (filter.kyc) {
+      data = data.filter(item => item.kycRequest === filter.kyc);
+    }
+    return data;
+  }, [sortedItems, filter]);
 
   const itemsPerPage = 10;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedItems = items.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
   const formatDate = (date: string) => {
     const options: Intl.DateTimeFormatOptions = {
@@ -49,6 +113,15 @@ const UserTable: React.FC<UserTableProps> = ({
       year: "numeric",
     };
     return new Date(date).toLocaleDateString("en-GB", options);
+  };
+
+  const handleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
   };
 
   const handleDropdownToggle = (id: string) => {
@@ -78,28 +151,130 @@ const UserTable: React.FC<UserTableProps> = ({
     }
   };
 
+  // Filter dropdown UI
+  const renderFilterDropdown = (
+    <div className="absolute left-[-100%] top-[100%] mt-2 w-96 bg-white border rounded-lg shadow-lg z-50 p-4">
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <input
+          type="text"
+          className="w-full border rounded px-2 py-1"
+          placeholder="Search by name"
+          value={filter.name}
+          onChange={e => setFilter(f => ({ ...f, name: e.target.value }))}
+        />
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input
+          type="text"
+          className="w-full border rounded px-2 py-1"
+          placeholder="Search by email"
+          value={filter.email}
+          onChange={e => setFilter(f => ({ ...f, email: e.target.value }))}
+        />
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filter.status}
+          onChange={e => setFilter(f => ({ ...f, status: e.target.value }))}
+        >
+          <option value="">All Status</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Access</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filter.access}
+          onChange={e => setFilter(f => ({ ...f, access: e.target.value }))}
+        >
+          <option value="">All Access</option>
+          <option value="admin">Admin</option>
+          <option value="regular">Regular</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">KYC</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filter.kyc}
+          onChange={e => setFilter(f => ({ ...f, kyc: e.target.value }))}
+        >
+          <option value="">All KYC</option>
+          <option value="Approved">Approved</option>
+          <option value="Pending">Pending</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          className="px-3 py-1 bg-gray-200 rounded"
+          onClick={() => setFilter({ name: '', email: '', status: '', access: '', kyc: '' })}
+        >
+          Reset
+        </button>
+        <button
+          className="px-3 py-1 bg-primary text-white rounded"
+          onClick={() => setFilterOpen(false)}
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="border border-[#D0D5DD] rounded-xl py-6 bg-white w-full">
-        <div className="flex justify-between items-center mb-4 px-6">
+        <div className="flex justify-between items-center mb-4 px-6 relative">
           <h1 className="text-[18px] font-semibold text-dark">{heading}</h1>
-          <Link
-            href="/user-management/user-create"
-            className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
-          >
-            + Create New
-          </Link>
+          <div className="flex items-center space-x-2 relative">
+            <button
+              className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium"
+              onClick={() => setFilterOpen(f => !f)}
+              type="button"
+            >
+              <svg width="20" viewBox="0 0 20 20">
+                <use href="/images/sprite.svg#svg-filter"></use>
+              </svg>
+              <span>Filter</span>
+            </button>
+            {filterOpen && renderFilterDropdown}
+            <Link
+              href="/user-management/user-create"
+              className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
+            >
+              + Create New
+            </Link>
+          </div>
         </div>
 
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-[#F3F3F5] border-b border-t !border-[#D0D5DD]">
-              <th className="py-3 px-6 text-[12px] font-medium text-gray">User</th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray">Email</th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray">Access</th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray">Date</th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray">Status</th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray">KYC</th>
+              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('userName')}>
+                User {sortConfig?.key === 'userName' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th>
+              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('email')}>
+                Email {sortConfig?.key === 'email' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th>
+              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('access')}>
+                Access {sortConfig?.key === 'access' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th>
+              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('registrationDate')}>
+                Date {sortConfig?.key === 'registrationDate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th>
+              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('status')}>
+                Status {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th>
+              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('kycRequest')}>
+                KYC {sortConfig?.key === 'kycRequest' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th>
               <th className="py-3 px-6 text-[12px] font-medium text-gray">Action</th>
             </tr>
           </thead>

@@ -110,12 +110,13 @@ const Dashboard: React.FC<DashboardProps> = () => {
     mergedRaffles = [...mergedRaffles, ...extra];
   }
   mergedRaffles = mergedRaffles.slice(0, 5);
-
+  console.log("mergedRaffles",mergedRaffles)
   // Build sponsorId -> sponsorName map
   const sponsorMap = sponsors.reduce((acc: Record<string, string>, sponsor: any) => {
     acc[sponsor.id] = sponsor.sponsorName;
     return acc;
   }, {});
+
   // Build prizeId -> prize map
   const prizeMap = prizes.reduce((acc: Record<string, any>, prize: any) => {
     acc[prize.id] = prize;
@@ -124,33 +125,42 @@ const Dashboard: React.FC<DashboardProps> = () => {
 
   // Transform raffles data for GamesTable
   const transformedRafflesData = mergedRaffles.map((item: any) => {
-    let price = 0;
-    let prizeName = "N/A";
-    if (item.prizeId && prizeMap[item.prizeId]) {
-      price = prizeMap[item.prizeId].retailValueUSD || 0;
-      prizeName = prizeMap[item.prizeId].prizeName || "N/A";
-    }
+    // Get prize data using prizeId
+    const prizeData = item.prizeId && prizeMap[item.prizeId] ? prizeMap[item.prizeId] : null;
+    
+    // Get sponsor data using sponsorId
+    const sponsorName = item.sponsorId && sponsorMap[item.sponsorId] ? sponsorMap[item.sponsorId] : "N/A";
+    console.log("sponsorId",item.sponsorId)
+    console.log("sponsorMap",sponsorMap[item.sponsorId])
+    console.log("sponsorName",sponsorName)
+    
+    // Get price from prize data
+    const price = prizeData ? (prizeData.retailValueUSD || 0) : 0;
+    
+    // Get prize name from prize data
+    const prizeName = prizeData ? (prizeData.prizeName || "N/A") : "N/A";
+
     return {
       id: item.id,
       title: item.title,
       picture: item.image,
-      partner: item.sponsorId ? sponsorMap[item.sponsorId] || "N/A" : "N/A",
+      partner: sponsorName,
       description: prizeName,
-      price,
+      price: price,
       ticketSold: 0,
       createdAt: item.createdAt,
       expiryDate: item.expiryDate,
       status: "Active"
     };
   });
-
+  console.log("transformedRafflesData",transformedRafflesData)
   // Handle item deletion
   const handleDelete = async (id: string) => {
     try {
       await deleteData("raffles", id, (message: string) => {
         toast(message);
       });
-      setInventoryData((prevData) => prevData.filter((item) => item.id !== id));
+      setRaffles((prevData) => prevData.filter((item) => item.id !== id));
     } catch (error) {
       toast.error("Error deleting item. Please try again.");
     }
@@ -178,43 +188,3 @@ const Dashboard: React.FC<DashboardProps> = () => {
 };
 
 export default Dashboard;
-
-
-
-// interface smTableDataType {
-//     id: number;
-//     title: string;
-//     qty: string;
-//     low: string;
-//     image: string
-// }
-// const smTableData : Array<smTableDataType> = [
-//     {
-//         id: 1,
-//         title: "Iphone 6",
-//         qty: "100",
-//         low: "Low",
-//         image: "/images/icon/5.svg",
-//     },
-//     {
-//         id: 2,
-//         title: "Iphone 6",
-//         qty: "100",
-//         low: "Low",
-//         image: "/images/icon/5.svg",
-//     },
-//     {
-//         id: 3,
-//         title: "Iphone 6",
-//         qty: "100",
-//         low: "Low",
-//         image: "/images/icon/5.svg",
-//     },
-//     {
-//         id: 4,
-//         title: "Iphone 6",
-//         qty: "100",
-//         low: "Low",
-//         image: "/images/icon/5.svg",
-//     },
-// ]

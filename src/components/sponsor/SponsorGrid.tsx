@@ -24,6 +24,11 @@ const SponsorGrid: React.FC = () => {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12; // You can adjust this as needed
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filter, setFilter] = useState({
+    search: '',
+    sort: '', // 'asc' or 'desc'
+  });
 
   useEffect(() => {
     fetchSponsors();
@@ -103,24 +108,84 @@ const SponsorGrid: React.FC = () => {
     }
   };
 
+  // Filtering and sorting logic
+  const filteredSponsors = React.useMemo(() => {
+    let data = [...sponsors];
+    if (filter.search) {
+      const search = filter.search.toLowerCase();
+      data = data.filter(s => s.sponsorName && s.sponsorName.toLowerCase().includes(search));
+    }
+    if (filter.sort === 'asc') {
+      data.sort((a, b) => a.sponsorName.localeCompare(b.sponsorName));
+    } else if (filter.sort === 'desc') {
+      data.sort((a, b) => b.sponsorName.localeCompare(a.sponsorName));
+    }
+    return data;
+  }, [sponsors, filter]);
+
   // Calculate paginated sponsors
-  const totalPages = Math.ceil(sponsors.length / itemsPerPage);
-  const paginatedSponsors = sponsors.slice(
+  const totalPages = Math.ceil(filteredSponsors.length / itemsPerPage);
+  const paginatedSponsors = filteredSponsors.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
+  );
+
+  // Filter dropdown UI
+  const renderFilterDropdown = (
+    <div className="absolute right-0 top-[110%] mt-2 w-80 bg-white border rounded-lg shadow-lg z-50 p-4" style={{ maxHeight: '320px', overflowY: 'auto' }}>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Search by Name</label>
+        <input
+          type="text"
+          className="w-full border rounded px-2 py-1"
+          placeholder="Sponsor name"
+          value={filter.search}
+          onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
+        />
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Sort by Name</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filter.sort}
+          onChange={e => setFilter(f => ({ ...f, sort: e.target.value }))}
+        >
+          <option value="">Default</option>
+          <option value="asc">A-Z</option>
+          <option value="desc">Z-A</option>
+        </select>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          className="px-3 py-1 bg-gray-200 rounded"
+          onClick={() => setFilter({ search: '', sort: '' })}
+        >
+          Reset
+        </button>
+        <button
+          className="px-3 py-1 bg-primary text-white rounded"
+          onClick={() => setFilterOpen(false)}
+        >
+          Apply
+        </button>
+      </div>
+    </div>
   );
 
   return (
     <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
       <ToastContainer position="top-right" autoClose={3000} />
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 relative">
         <h1 className="text-[18px] font-semibold text-dark">Sponsor Library</h1>
-        <button className="inline-flex items-center gap-2 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
-          <svg width="20" viewBox="0 0 20 20">
-            <use href="/images/sprite.svg#svg-filter"></use>
-          </svg>
-          <span>Filter</span>
-        </button>
+        <div className="relative">
+          <button className="inline-flex items-center gap-2 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium" onClick={() => setFilterOpen(f => !f)}>
+            <svg width="20" viewBox="0 0 20 20">
+              <use href="/images/sprite.svg#svg-filter"></use>
+            </svg>
+            <span>Filter</span>
+          </button>
+          {filterOpen && renderFilterDropdown}
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {paginatedSponsors.map((sponsor) => (

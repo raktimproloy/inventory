@@ -93,7 +93,7 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                 onChange={e => setSearchPrice(e.target.value)}
                 className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
               />
-              <select
+              {/* <select
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
                 className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
@@ -101,8 +101,8 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                 <option value="All">All Status</option>
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
-              </select>
-              <select
+              </select> */}
+              {/* <select
                 value={filterSponsor}
                 onChange={e => setFilterSponsor(e.target.value)}
                 className="px-3 py-2 border border-[#E4E7EC] rounded-lg text-sm w-full"
@@ -111,7 +111,7 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                 {sponsors.map(s => (
                   <option key={s.id} value={s.id}>{s.sponsorName}</option>
                 ))}
-              </select>
+              </select> */}
               <button
                 className="px-4 bg-red-500 text-white py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium w-full sm:w-auto"
                 onClick={() => {

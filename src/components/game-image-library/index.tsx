@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Dropdown from "../common/dropdown";
 import ConfirmationModal from "../common/modal";
@@ -19,7 +19,7 @@ interface ImageData {
 
 const IMAGES_PER_PAGE = 4;
 
-const ImageLibrary = () => {
+const GameImageLibrary: React.FC = () => {
     const [images, setImages] = useState<ImageData[]>([]);
     const [loading, setLoading] = useState(true);
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -29,6 +29,11 @@ const ImageLibrary = () => {
     const [editModal, setEditModal] = useState<{ open: boolean; image: ImageData | null }>({ open: false, image: null });
     const [currentPage, setCurrentPage] = useState(1);
     const router = useRouter();
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [filter, setFilter] = useState({
+        search: '',
+        sort: '', // 'asc' or 'desc'
+    });
 
     const fetchImages = async () => {
         setLoading(true);
@@ -62,6 +67,21 @@ const ImageLibrary = () => {
     // Pagination logic
     const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE);
     const paginatedImages = images.slice((currentPage - 1) * IMAGES_PER_PAGE, currentPage * IMAGES_PER_PAGE);
+
+    // Filtering and sorting logic
+    const filteredImages = React.useMemo(() => {
+        let data = [...images];
+        if (filter.search) {
+            const search = filter.search.toLowerCase();
+            data = data.filter(img => img.title && img.title.toLowerCase().includes(search));
+        }
+        if (filter.sort === 'asc') {
+            data.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
+        } else if (filter.sort === 'desc') {
+            data.sort((a, b) => (b.category || '').localeCompare(a.category || ''));
+        }
+        return data;
+    }, [images, filter]);
 
     const handleDropdownToggle = (id: string) => {
         setOpenDropdown((prev) => (prev === id ? null : id));
@@ -107,22 +127,67 @@ const ImageLibrary = () => {
         );
     }
 
+    // Filter dropdown UI
+    const renderFilterDropdown = (
+        <div className="absolute right-0 top-[110%] mt-2 w-full max-w-xs bg-white border rounded-lg shadow-lg z-50 p-4" style={{ maxHeight: '320px', minWidth: '260px', overflowY: 'auto' }}>
+            <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Search by Title</label>
+                <input
+                    type="text"
+                    className="w-full border rounded px-2 py-1"
+                    placeholder="Image title"
+                    value={filter.search}
+                    onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
+                />
+            </div>
+            <div className="mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sort by Category</label>
+                <select
+                    className="w-full border rounded px-2 py-1"
+                    value={filter.sort}
+                    onChange={e => setFilter(f => ({ ...f, sort: e.target.value }))}
+                >
+                    <option value="">Default</option>
+                    <option value="asc">A-Z</option>
+                    <option value="desc">Z-A</option>
+                </select>
+            </div>
+            <div className="flex justify-end gap-2">
+                <button
+                    className="px-3 py-1 bg-gray-200 rounded"
+                    onClick={() => setFilter({ search: '', sort: '' })}
+                >
+                    Reset
+                </button>
+                <button
+                    className="px-3 py-1 bg-primary text-white rounded"
+                    onClick={() => setFilterOpen(false)}
+                >
+                    Apply
+                </button>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="border border-[#D0D5DD] rounded-xl p-6 bg-white w-full">
-            <div className="flex justify-between items-center mb-4">
+        <div className="relative">
+            <div className="flex justify-between items-center mb-4 relative">
                 <h1 className="text-[18px] font-semibold text-dark">Game Images</h1>
                 <div className="flex items-center space-x-2">
-                    <button className="inline-flex items-center gap-2 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
-                        <svg width="20" viewBox="0 0 20 20">
-                            <use href="/images/sprite.svg#svg-filter"></use>
-                        </svg>
-                        <span>Filter</span>
-                    </button>
+                    <div className="relative">
+                        <button className="inline-flex items-center gap-2 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium" onClick={() => setFilterOpen(f => !f)}>
+                            <svg width="20" viewBox="0 0 20 20">
+                                <use href="/images/sprite.svg#svg-filter"></use>
+                            </svg>
+                            <span>Filter</span>
+                        </button>
+                        {filterOpen && renderFilterDropdown}
+                    </div>
                     <a href="/game-images/add" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">+ Add New</a>
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {paginatedImages.map((img) => (
+                {filteredImages.map((img) => (
                     <div
                         key={img.id}
                         className="flex flex-col items-center group min-h-[210px]"
@@ -226,4 +291,4 @@ const ImageLibrary = () => {
     );
 };
 
-export default ImageLibrary;
+export default GameImageLibrary;

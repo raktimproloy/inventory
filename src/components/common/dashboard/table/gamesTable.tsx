@@ -12,16 +12,10 @@ interface GameItem {
   picture: string;
   partner: string;
   description: string;
-  price: string | number;
+  price: number;
   ticketSold: number;
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
-  expiryDate: {
-    seconds: number;
-    nanoseconds: number;
-  };
+  createdAt: any;
+  expiryDate: any;
   status: string;
 }
 
@@ -62,7 +56,6 @@ const getCountdown = (now: Date, targetDate: Date) => {
 };
 
 const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => {
-    console.log(items)
   const [currentTime, setCurrentTime] = useState(new Date());
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -81,7 +74,6 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
 
   // Only show latest 5
   const sortedItems = items.slice(0, 5);
-
   // Dropdown toggle
   const handleDropdownToggle = (id: string) => {
     setOpenDropdown((prev) => (prev === id ? null : id));
@@ -139,12 +131,12 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 px-6 gap-2">
           <h1 className="text-[18px] font-semibold text-dark">{heading}</h1>
           <div className="flex items-center space-x-2">
-            <button className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
+            {/* <button className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium">
               <svg width="20" viewBox="0 0 20 20">
                 <use href="/images/sprite.svg#svg-filter"></use>
               </svg>
               <span>Filter</span>
-            </button>
+            </button> */}
             <Link href="/raffle-creation/create-raffle" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">
               + Create New
             </Link>
@@ -217,7 +209,7 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
                       </div>
                     </td>
                     <td className="text-sm text-gray py-3 px-6">{item.ticketSold}</td>
-                    <td className="text-sm text-gray py-3 px-6">{typeof item.price === 'string' ? `$${item.price}` : item.price}</td>
+                    <td className="text-sm text-gray py-3 px-6">${item.price}</td>
                     <td className="text-sm text-gray py-3 px-6">{item.partner}</td>
                     <td className="text-sm text-gray py-3 px-6">
                       <span className="">

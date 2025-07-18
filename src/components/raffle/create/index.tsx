@@ -14,6 +14,8 @@ const CreateRaffle: React.FC = () => {
       if (data.prizeId && data.sponsorId && docRef && docRef.id) {
         await addGameToSponsor(data.sponsorId, docRef.id);
       }
+
+      
     } catch (error) {
       console.error(error);
       toast.error("Error saving prize.");

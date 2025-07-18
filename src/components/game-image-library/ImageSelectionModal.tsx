@@ -50,10 +50,10 @@ const ImageSelectionModal: React.FC<ImageSelectionModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-[#D0D5DD]">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-xl w-full max-w-full sm:max-w-4xl max-h-[95vh] overflow-hidden border border-[#D0D5DD] flex flex-col">
                 {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-[#E4E7EC] bg-white">
+                <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-[#E4E7EC] bg-white">
                     <h2 className="text-[18px] font-semibold text-dark">Select Game Image</h2>
                     <button
                         onClick={onClose}
@@ -66,9 +66,9 @@ const ImageSelectionModal: React.FC<ImageSelectionModalProps> = ({
                 </div>
 
                 {/* Search and Filter */}
-                <div className="px-6 py-4 border-b border-[#E4E7EC] bg-gray-50">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
+                <div className="px-4 sm:px-6 py-4 border-b border-[#E4E7EC] bg-gray-50">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 min-w-0">
                             <div className="relative">
                                 <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -82,7 +82,7 @@ const ImageSelectionModal: React.FC<ImageSelectionModalProps> = ({
                                 />
                             </div>
                         </div>
-                        <div className="md:w-48">
+                        <div className="w-full sm:w-48">
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -97,7 +97,7 @@ const ImageSelectionModal: React.FC<ImageSelectionModalProps> = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[60vh] bg-white">
+                <div className="p-4 sm:p-6 overflow-y-auto max-h-[60vh] bg-white">
                     {images.length === 0 ? (
                         <div className="flex justify-center items-center h-32">
                             <div className="flex items-center space-x-2">
@@ -106,7 +106,7 @@ const ImageSelectionModal: React.FC<ImageSelectionModalProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {filteredImages.map((img) => (
                                 <div
                                     key={img.id}
@@ -141,7 +141,7 @@ const ImageSelectionModal: React.FC<ImageSelectionModalProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end p-6 border-t border-[#E4E7EC] bg-gray-50">
+                <div className="flex justify-end p-4 sm:p-6 border-t border-[#E4E7EC] bg-gray-50">
                     <button
                         onClick={onClose}
                         className="px-6 py-3 text-dark border border-[#E4E7EC] rounded-lg hover:bg-gray-50 transition-colors font-medium"
