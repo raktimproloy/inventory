@@ -3,9 +3,10 @@ import { toast } from 'react-toastify';
 import RaffleForm from "../form";
 import { addGame } from "../../../../service/gameCreation";
 import { addGameToSponsor } from '../../../../service/sponsorService';
-
+import { useRouter } from "next/navigation";
 
 const CreateRaffle: React.FC = () => {
+  const router = useRouter();
   const handleCreate = async (data: any) => {
     try {
       // Create the game/raffle
@@ -15,7 +16,7 @@ const CreateRaffle: React.FC = () => {
         await addGameToSponsor(data.sponsorId, docRef.id);
       }
 
-      
+      router.push("/raffle-creation");
     } catch (error) {
       console.error(error);
       toast.error("Error saving prize.");

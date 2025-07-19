@@ -229,18 +229,9 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
           }
         }
       }
-    } else if (selectedPrize && selectedPrize.createdAt) {
-      // If creating and selectedPrize has createdAt, set it as default
-      const dateVal = selectedPrize.createdAt.seconds
-        ? new Date(selectedPrize.createdAt.seconds * 1000)
-        : new Date(selectedPrize.createdAt);
-      setValue("createdAt", dateVal.toISOString().split("T")[0]);
-      // Optionally, set expiryDate to createdAt + 1 day
-      const expiry = new Date(dateVal);
-      expiry.setDate(expiry.getDate() + 1);
-      setValue("expiryDate", expiry.toISOString().split("T")[0]);
     }
-  }, [initialData, reset, allPrizes, setValue, selectedPrize]);
+    // Removed the automatic date setting when prize is selected for new raffles
+  }, [initialData, reset, allPrizes, setValue]);
 
   useEffect(() => {
     // Fetch all prizes on mount
