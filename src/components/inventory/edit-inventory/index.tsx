@@ -34,6 +34,12 @@ const EditInventory: React.FC = () => {
               data.selectedSponsor = matchedSponsor;
             }
           }
+          
+          // Handle eligible regions array conversion
+          if (typeof data.eligibleRegions === 'string') {
+            data.eligibleRegions = data.eligibleRegions.split(',').map((region: string) => region.trim());
+          }
+          
           setInitialData(data); // Set the fetched data as initial form data
         } else {
           toast.error("Inventory item not found!");

@@ -282,12 +282,14 @@ const UserTable: React.FC<UserTableProps> = ({
             {paginatedItems.map((item) => (
               <tr key={item.id} className="border-b !border-[#D0D5DD]">
                 <td className="py-3 px-6 text-sm text-gray flex items-center gap-2">
-                  <img
-                    src={item.thumbnail || "/images/laptop.webp"}
-                    alt={item.userName}
-                    className="h-8 w-8 rounded-full object-cover"
-                  />
-                  <span>{item.userName}</span>
+                  <Link href={`/user-management/profile/${item.id}`} className="flex items-center gap-2 hover:opacity-80">
+                    <img
+                      src={item.thumbnail || "/images/laptop.webp"}
+                      alt={item.userName}
+                      className="h-8 w-8 rounded-full object-cover cursor-pointer"
+                    />
+                    <span className="cursor-pointer hover:text-blue-600">{item.userName}</span>
+                  </Link>
                 </td>
                 <td className="py-3 px-6 text-sm">{item.email}</td>
                 <td className="py-3 px-6 text-sm">{item.access}</td>

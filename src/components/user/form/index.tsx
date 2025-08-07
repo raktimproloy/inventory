@@ -13,6 +13,12 @@ export interface FormData {
   profilePicture?: string | null;
   createdAt: string; // ✅ made required to match yup schema
   isBanned?: string;
+  telContact?: string;
+  gender?: string;
+  location?: string;
+  birthday?: string;
+  timeZone?: string;
+  kycDocument?: string;
 }
 
 interface UserFormProps {
@@ -27,6 +33,12 @@ const schema = yup.object().shape({
   kycRequest: yup.string().required("KYC request is required"),
   createdAt: yup.string().required("Created At is required"),
   isBanned: yup.string().optional(), // Optional, still type-safe
+  telContact: yup.string().optional(),
+  gender: yup.string().optional(),
+  location: yup.string().optional(),
+  birthday: yup.string().optional(),
+  timeZone: yup.string().optional(),
+  kycDocument: yup.string().optional(),
 });
 
 const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
@@ -103,6 +115,50 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
               <option value="Rejected">Rejected</option>
             </select>
             {errors.kycRequest && <p className="text-red-500">{errors.kycRequest.message}</p>}
+          </div>
+
+          <div className="form-group">
+            <label>Tel Contact</label>
+            <input className="form-control" type="tel" placeholder="868 123 4567" {...register("telContact")} />
+          </div>
+
+          <div className="form-group">
+            <label>Gender</label>
+            <select className="form-control" {...register("gender")}>
+              <option value="">Please select</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Birthday</label>
+            <input className="form-control" type="date" {...register("birthday")} />
+          </div>
+
+          <div className="form-group">
+            <label>Location</label>
+            <select className="form-control" {...register("location")}>
+              <option value="">Please Select</option>
+              <option value="arima">Arima</option>
+              <option value="chaguanas">Chaguanas</option>
+              <option value="port-of-spain">Port of Spain</option>
+              <option value="san-fernando">San Fernando</option>
+              <option value="scarborough">Scarborough</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Time Zone</label>
+            <select className="form-control" {...register("timeZone")}>
+              <option value="">Please Select</option>
+              <option value="AST">Atlantic Standard Time (AST)</option>
+              <option value="EST">Eastern Standard Time (EST)</option>
+              <option value="PST">Pacific Standard Time (PST)</option>
+              <option value="UTC">UTC</option>
+            </select>
           </div>
 
           <div className="form-group col-span-2 mt-6">

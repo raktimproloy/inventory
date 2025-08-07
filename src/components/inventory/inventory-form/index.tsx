@@ -23,7 +23,7 @@ export interface FormData {
   fulfillmentMethod: string;
   deliveryTimeline: string;
   claimWindow: string;
-  eligibleRegions: string;
+  eligibleRegions: string | string[];
   pickupRequired: boolean;
   retailValueUSD: string;
   ageRestriction: string;
@@ -32,8 +32,13 @@ export interface FormData {
   additionalInfo: string;
   thumbnail?: string | null;
   keywords: string[];
-  sponsorId?: string; // <-- add sponsorId
+  sponsorId?: string;
   breakEvenValue: number;
+  stockDate: string;
+  useStandardTerms?: boolean;
+  customTermsFile?: File | null;
+  customTermsUrl?: string;
+  customTermsType?: 'url' | 'file';
 }
 
 // Update InventoryFormProps to allow extra fields for parent
@@ -81,9 +86,9 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       // Do NOT add thumbnail separately
       // Remove duplicates just in case
       urls = Array.from(new Set(urls));
-      return urls.length > 0 ? urls.map(url => ({ url })) : [{ url: "/images/laptop.webp" }];
+      return urls.length > 0 ? urls.map(url => ({ url })) : [];
     }
-    return [{ url: "/images/laptop.webp" }];
+    return [];
   };
   const [files, setFiles] = useState<UploadedFile[]>(getInitialFiles());
   console.log(files)
@@ -103,6 +108,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
   const [retailValueUSD, setRetailValueUSD] = useState('');
   const [breakEvenValue, setBreakEvenValue] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [regionsDropdownOpen, setRegionsDropdownOpen] = useState(false);
   // Add manual validation state
   const [errors, setErrors] = useState<any>({});
 
@@ -118,9 +124,14 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
   const [fulfillmentMethod, setFulfillmentMethod] = useState('');
   const [deliveryTimeline, setDeliveryTimeline] = useState('');
   const [claimWindow, setClaimWindow] = useState('');
-  const [eligibleRegions, setEligibleRegions] = useState('');
+  const [eligibleRegions, setEligibleRegions] = useState<string[]>([]);
   const [ageRestriction, setAgeRestriction] = useState('');
   const [termsConditionsUrl, setTermsConditionsUrl] = useState('');
+  const [useStandardTerms, setUseStandardTerms] = useState(true);
+  const [customTermsFile, setCustomTermsFile] = useState<File | null>(null);
+  const [customTermsUrl, setCustomTermsUrl] = useState('');
+  const [customTermsType, setCustomTermsType] = useState<'url' | 'file'>('url');
+  const [stockDate, setStockDate] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
 
   useEffect(() => {
@@ -139,9 +150,21 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
       setFulfillmentMethod(initialData.fulfillmentMethod);
       setDeliveryTimeline(initialData.deliveryTimeline);
       setClaimWindow(initialData.claimWindow);
-      setEligibleRegions(initialData.eligibleRegions);
+      setEligibleRegions(
+        typeof initialData.eligibleRegions === 'string' 
+          ? initialData.eligibleRegions.split(',').map((region: string) => region.trim()) 
+          : Array.isArray(initialData.eligibleRegions) 
+            ? initialData.eligibleRegions 
+            : []
+      );
       setAgeRestriction(initialData.ageRestriction);
       setTermsConditionsUrl(initialData.termsConditionsUrl);
+      setUseStandardTerms(initialData.termsConditionsUrl === 'https://example.com/standard-terms');
+      setCustomTermsFile(null);
+      setCustomTermsUrl(initialData.customTermsUrl || (initialData.termsConditionsUrl !== 'https://example.com/standard-terms' ? initialData.termsConditionsUrl : ''));
+      setCustomTermsType(initialData.customTermsType || (initialData.termsConditionsUrl && initialData.termsConditionsUrl !== 'https://example.com/standard-terms' ? 'url' : 'url'));
+      setStockDate(initialData.stockDate || '');
+      setUseStandardTerms(initialData.useStandardTerms !== undefined ? initialData.useStandardTerms : (initialData.termsConditionsUrl === 'https://example.com/standard-terms'));
       setAdditionalInfo(initialData.additionalInfo);
       setRetailValueUSD(initialData.retailValueUSD);
       setBreakEvenValue(initialData.breakEvenValue);
@@ -234,10 +257,11 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
     if (!data.fulfillmentMethod) newErrors.fulfillmentMethod = 'Fulfillment Method is required';
     if (!data.deliveryTimeline) newErrors.deliveryTimeline = 'Delivery Timeline is required';
     if (!data.claimWindow) newErrors.claimWindow = 'Claim Window is required';
-    if (!data.eligibleRegions) newErrors.eligibleRegions = 'Eligible Regions is required';
+    if (!data.eligibleRegions || data.eligibleRegions.length === 0) newErrors.eligibleRegions = 'Eligible Regions is required';
     if (!retailValueUSD) newErrors.retailValueUSD = 'Retail Value (USD) is required';
     if (!data.ageRestriction) newErrors.ageRestriction = 'Age Restriction is required';
-    if (!data.termsConditionsUrl) newErrors.termsConditionsUrl = 'Terms & Conditions URL is required';
+    if (!data.termsConditionsUrl) newErrors.termsConditionsUrl = 'Terms & Conditions are required';
+    if (!data.stockDate) newErrors.stockDate = 'Prize Stock Date is required';
     // Add more as needed
     return newErrors;
   };
@@ -538,6 +562,18 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               </div>
               {errors.prizeCategory && <p className="text-red-500 text-sm mt-1">{errors.prizeCategory}</p>}
             </div>
+            <div className="form-group">
+              <label htmlFor="stockDate" className="block text-sm font-medium text-gray-700 mb-1">Prize Stock Added/Updated*</label>
+              <input 
+                type="date" 
+                id="stockDate" 
+                className={`form-control ${errors.stockDate ? 'border-red-500' : ''}`} 
+                value={stockDate}
+                onChange={e => setStockDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+              {errors.stockDate && <p className="text-red-500 text-sm mt-1">{errors.stockDate}</p>}
+            </div>
           </div>
         </AccordionSection>
 
@@ -560,59 +596,118 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
             </div>
             <div className="form-group">
               <label htmlFor="deliveryTimeline" className="block text-sm font-medium text-gray-700 mb-1">Delivery Timeline*</label>
-              <input 
-                className={`form-control ${errors.deliveryTimeline ? 'border-red-500' : ''}`} 
-                type="text" 
+              <select 
                 id="deliveryTimeline" 
-                placeholder="e.g., 3-5 business days" 
+                className={`form-control ${errors.deliveryTimeline ? 'border-red-500' : ''}`} 
                 value={deliveryTimeline}
                 onChange={e => setDeliveryTimeline(e.target.value)}
-              />
+              >
+                <option value="">Select Delivery Timeline</option>
+                {Array.from({ length: 14 }, (_, i) => i + 1).map(day => (
+                  <option key={day} value={`${day} day${day > 1 ? 's' : ''}`}>
+                    {day} day{day > 1 ? 's' : ''}
+                  </option>
+                ))}
+              </select>
               {errors.deliveryTimeline && <p className="text-red-500 text-sm mt-1">{errors.deliveryTimeline}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="claimWindow" className="block text-sm font-medium text-gray-700 mb-1">Claim Window*</label>
-              <input 
-                className={`form-control ${errors.claimWindow ? 'border-red-500' : ''}`} 
-                type="text" 
+              <select 
                 id="claimWindow" 
-                placeholder="e.g., 30 days" 
+                className={`form-control ${errors.claimWindow ? 'border-red-500' : ''}`} 
                 value={claimWindow}
                 onChange={e => setClaimWindow(e.target.value)}
-              />
+              >
+                <option value="">Select Claim Window</option>
+                {Array.from({ length: 14 }, (_, i) => i + 1).map(day => (
+                  <option key={day} value={`${day} day${day > 1 ? 's' : ''}`}>
+                    {day} day{day > 1 ? 's' : ''}
+                  </option>
+                ))}
+              </select>
               {errors.claimWindow && <p className="text-red-500 text-sm mt-1">{errors.claimWindow}</p>}
             </div>
             <div className="form-group">
               <label htmlFor="eligibleRegions" className="block text-sm font-medium text-gray-700 mb-1">Eligible Regions*</label>
-              <select 
-                id="eligibleRegions" 
-                className={`form-control ${errors.eligibleRegions ? 'border-red-500' : ''}`} 
-                value={eligibleRegions}
-                onChange={e => setEligibleRegions(e.target.value)}
-              >
-                <option value="">Select Eligible Region</option>
-                <option value="arima">Arima</option>
-                <option value="chaguanas">Chaguanas</option>
-                <option value="claxton-bay">Claxton Bay</option>
-                <option value="couva">Couva</option>
-                <option value="debe">Debe</option>
-                <option value="diego-martin">Diego Martin</option>
-                <option value="freeport">Freeport</option>
-                <option value="fyzabad">Fyzabad</option>
-                <option value="gasparillo">Gasparillo</option>
-                <option value="penal">Penal</option>
-                <option value="point-fortin">Point Fortin</option>
-                <option value="port-of-spain">Port of Spain</option>
-                <option value="princes-town">Princes Town</option>
-                <option value="roxborough">Roxborough</option>
-                <option value="san-fernando">San Fernando</option>
-                <option value="sangre-grande">Sangre Grande</option>
-                <option value="san-juan">San Juan</option>
-                <option value="scarborough">Scarborough</option>
-                <option value="siparia">Siparia</option>
-                <option value="tunapuna">Tunapuna</option>
-                <option value="valencia">Valencia</option>
-              </select>
+              <div className="relative">
+                <div 
+                  className={`form-control min-h-[42px] flex flex-wrap items-center gap-1 p-2 cursor-pointer ${errors.eligibleRegions ? 'border-red-500' : ''}`}
+                  onClick={() => setRegionsDropdownOpen(!regionsDropdownOpen)}
+                >
+                  {eligibleRegions.length > 0 ? (
+                    <>
+                      {eligibleRegions.map((region) => (
+                        <span key={region} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary text-white">
+                          {region.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEligibleRegions(eligibleRegions.filter(r => r !== region));
+                            }}
+                            className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-white hover:text-primary"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </>
+                  ) : (
+                    <span className="text-gray-400">Select regions...</span>
+                  )}
+                </div>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                {/* Dropdown Options */}
+                {regionsDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {[
+                      { value: "arima", label: "Arima" },
+                      { value: "chaguanas", label: "Chaguanas" },
+                      { value: "claxton-bay", label: "Claxton Bay" },
+                      { value: "couva", label: "Couva" },
+                      { value: "debe", label: "Debe" },
+                      { value: "diego-martin", label: "Diego Martin" },
+                      { value: "freeport", label: "Freeport" },
+                      { value: "fyzabad", label: "Fyzabad" },
+                      { value: "gasparillo", label: "Gasparillo" },
+                      { value: "penal", label: "Penal" },
+                      { value: "point-fortin", label: "Point Fortin" },
+                      { value: "port-of-spain", label: "Port of Spain" },
+                      { value: "princes-town", label: "Princes Town" },
+                      { value: "roxborough", label: "Roxborough" },
+                      { value: "san-fernando", label: "San Fernando" },
+                      { value: "sangre-grande", label: "Sangre Grande" },
+                      { value: "san-juan", label: "San Juan" },
+                      { value: "scarborough", label: "Scarborough" },
+                      { value: "siparia", label: "Siparia" },
+                      { value: "tunapuna", label: "Tunapuna" },
+                      { value: "valencia", label: "Valencia" }
+                    ].map((region) => (
+                      <div
+                        key={region.value}
+                        className={`px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                          eligibleRegions.includes(region.value) ? 'bg-primary text-white' : ''
+                        }`}
+                        onClick={() => {
+                          if (eligibleRegions.includes(region.value)) {
+                            setEligibleRegions(eligibleRegions.filter(r => r !== region.value));
+                          } else {
+                            setEligibleRegions([...eligibleRegions, region.value]);
+                          }
+                        }}
+                      >
+                        {region.label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               {errors.eligibleRegions && <p className="text-red-500 text-sm mt-1">{errors.eligibleRegions}</p>}
             </div>
             <div className="form-group flex items-center gap-2 justify-between">
@@ -655,8 +750,8 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
         </AccordionSection>
 
         <AccordionSection className="!bg-[#E9E9E9] !border-[#D0D5DD] !rounded-lg" title="5. Rules & Restrictions" isOpen={openSections[4]} onClick={() => toggleSection(4)}>
-          <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6">
-            <div className="form-group">
+          <div className="grid md:grid-cols-8 grid-cols-1 gap-4 md:gap-6">
+            <div className="form-group col-span-2">
               <label htmlFor="ageRestriction" className="block text-sm font-medium text-gray-700 mb-1">Age Restriction*</label>
               <input 
                 className={`form-control ${errors.ageRestriction ? 'border-red-500' : ''}`} 
@@ -668,19 +763,203 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               />
               {errors.ageRestriction && <p className="text-red-500 text-sm mt-1">{errors.ageRestriction}</p>}
             </div>
-            <div className="form-group">
-              <label htmlFor="termsConditionsUrl" className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions URL*</label>
-              <input 
-                className={`form-control ${errors.termsConditionsUrl ? 'border-red-500' : ''}`} 
-                type="url" 
-                id="termsConditionsUrl" 
-                placeholder="https://example.com/terms" 
-                value={termsConditionsUrl}
-                onChange={e => setTermsConditionsUrl(e.target.value)}
-              />
+            <div className="form-group col-span-4">
+              <label htmlFor="termsConditions" className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions*</label>
+              
+              {/* Terms & Conditions Options */}
+              <div className="space-y-4">
+                {/* Standard Terms Option */}
+                <div className="border border-gray-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="radio"
+                      id="standardTerms"
+                      name="termsType"
+                      checked={useStandardTerms}
+                      onChange={() => setUseStandardTerms(true)}
+                      className="mt-1 text-primary focus:ring-primary"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="standardTerms" className="block text-base font-semibold text-gray-900 cursor-pointer">
+                        Use Standard Terms & Conditions
+                      </label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Review and accept our standard terms & conditions for your prize
+                      </p>
+                      {useStandardTerms && (
+                        <div className="mt-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-2">
+                              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                              <span className="text-sm font-medium text-blue-900">Standard Terms & Conditions</span>
+                            </div>
+                            <a 
+                              href="https://example.com/standard-terms" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                              Review Terms
+                            </a>
+                          </div>
+                          <div className="bg-white rounded-md p-3 border border-blue-200">
+                            <label className="flex items-center space-x-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={termsConditionsUrl === 'https://example.com/standard-terms'}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setTermsConditionsUrl('https://example.com/standard-terms');
+                                  } else {
+                                    setTermsConditionsUrl('');
+                                  }
+                                }}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700">I accept the standard terms & conditions</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custom Terms Option */}
+                <div className="border border-gray-200 rounded-lg p-4 hover:border-primary/30 transition-colors">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="radio"
+                      id="customTerms"
+                      name="termsType"
+                      checked={!useStandardTerms}
+                      onChange={() => setUseStandardTerms(false)}
+                      className="mt-1 text-primary focus:ring-primary"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="customTerms" className="block text-base font-semibold text-gray-900 cursor-pointer">
+                        Custom Terms & Conditions
+                      </label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Provide a link or upload your own terms & conditions document
+                      </p>
+                      {!useStandardTerms && (
+                        <div className="mt-3 space-y-4">
+                          {/* Custom Terms Type Selection */}
+                          <div className="flex space-x-4">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="customTermsType"
+                                value="url"
+                                checked={customTermsType === 'url'}
+                                onChange={() => setCustomTermsType('url')}
+                                className="text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm font-medium text-gray-700">Provide URL</span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="customTermsType"
+                                value="file"
+                                checked={customTermsType === 'file'}
+                                onChange={() => setCustomTermsType('file')}
+                                className="text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm font-medium text-gray-700">Upload File</span>
+                            </label>
+                          </div>
+
+                          {/* URL Input */}
+                          {customTermsType === 'url' && (
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 p-4">
+                              <label className="block text-sm font-medium text-green-900 mb-2">
+                                Terms & Conditions URL
+                              </label>
+                              <div className="flex space-x-2">
+                                <input
+                                  type="url"
+                                  placeholder="https://example.com/your-terms"
+                                  value={customTermsUrl}
+                                  onChange={(e) => {
+                                    setCustomTermsUrl(e.target.value);
+                                    setTermsConditionsUrl(e.target.value);
+                                  }}
+                                  className="form-control flex-1"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* File Upload */}
+                          {customTermsType === 'file' && (
+                            <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-200 p-4">
+                              <label className="block text-sm font-medium text-purple-900 mb-2">
+                                Upload Terms & Conditions Document
+                              </label>
+                              <div className="space-y-3">
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] || null;
+                                      setCustomTermsFile(file);
+                                      if (file) {
+                                        setTermsConditionsUrl(`custom-terms-${Date.now()}`);
+                                      } else {
+                                        setTermsConditionsUrl('');
+                                      }
+                                    }}
+                                    className="form-control flex-1"
+                                  />
+                                </div>
+                                {customTermsFile && (
+                                  <div className="bg-white rounded-lg border border-purple-200 p-3">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center space-x-2">
+                                        <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                        </svg>
+                                        <span className="text-sm font-medium text-purple-900">
+                                          ✓ {customTermsFile.name}
+                                        </span>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setCustomTermsFile(null);
+                                          setTermsConditionsUrl('');
+                                        }}
+                                        className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                    <p className="text-xs text-purple-600 mt-1">
+                                      File size: {(customTermsFile.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
               {errors.termsConditionsUrl && <p className="text-red-500 text-sm mt-1">{errors.termsConditionsUrl}</p>}
             </div>
-            <div className="form-group flex items-center gap-2 justify-between">
+            <div className="form-group col-span-2 flex items-center gap-2 justify-between">
               <label htmlFor="idRequired" className="block text-sm font-medium text-gray-700">ID Required</label>
               <label className="inline-flex items-center cursor-pointer">
                 <input 
@@ -740,6 +1019,12 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 if (selectedFiles.length > 0) {
                   imageUrls = await Promise.all(selectedFiles.map(f => uploadImageToFirebase(f)));
                 }
+                
+                // Handle custom terms file upload if present
+                let uploadedCustomTermsUrl = '';
+                if (customTermsFile && !useStandardTerms) {
+                  uploadedCustomTermsUrl = await uploadImageToFirebase(customTermsFile);
+                }
                 const data = {
                   prizeName,
                   quantityAvailable,
@@ -749,10 +1034,11 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                   fulfillmentMethod,
                   deliveryTimeline,
                   claimWindow,
-                  eligibleRegions,
+                  eligibleRegions: eligibleRegions.join(', '),
                   retailValueUSD,
                   ageRestriction,
                   termsConditionsUrl,
+                  stockDate,
                   additionalInfo,
                   pickupRequired,
                   idRequired,
@@ -760,6 +1046,9 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                   thumbnail: imageUrls[0] || files[0]?.url || null,
                   keywords: [keyword1, keyword2, keyword3].filter(Boolean),
                   breakEvenValue,
+                  useStandardTerms,
+                  customTermsUrl: uploadedCustomTermsUrl || customTermsUrl,
+                  customTermsType,
                   ...(selectedSponsor && { sponsorId: selectedSponsor.id }),
                 };
                 console.log(data)

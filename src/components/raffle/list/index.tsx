@@ -80,7 +80,7 @@ const RaffleList: React.FC = () => {
     <div className="Game List">
       <RaffleTable
         items={raffleData}
-        heading="Raffle List"
+        heading="Games List"
         onDelete={handleDelete}
       />
     </div>

@@ -29,6 +29,12 @@ const UserList: React.FC = () => {
           status: data.isBanned ? "Blocked" : "Active",
           kycRequest: data.kycRequest || "Pending",
           thumbnail: data.profilePicture || null,
+          telContact: data.telContact || "",
+          gender: data.gender || "",
+          location: data.location || "",
+          birthday: data.birthday || "",
+          timeZone: data.timeZone || "",
+          kycDocument: data.kycDocument || "",
         };
       });
       setUsersData(users);

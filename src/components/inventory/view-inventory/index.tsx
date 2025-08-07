@@ -1,4 +1,3 @@
-import { GetStaticPaths, GetStaticProps } from 'next';
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
