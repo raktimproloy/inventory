@@ -36,6 +36,8 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEditItemId, setSelectedEditItemId] = useState<number | null>(null);
   const [filter, setFilter] = useState({
     status: '',
     search: '',
@@ -76,7 +78,28 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
   };
 
   const handleEdit = (id: number) => {
-    router.push(`/raffle-creation/${id}`);
+    // Find the item to check if it's live
+    const item = items.find(item => item.id === id);
+    if (item && (item.computedStatus || '').toLowerCase() === 'live') {
+      // If game is live, show confirmation modal
+      setSelectedEditItemId(id);
+      setIsEditModalOpen(true);
+    } else {
+      // If game is not live, directly redirect to edit page
+      router.push(`/raffle-creation/${id}`);
+    }
+  };
+
+  const handleConfirmEdit = () => {
+    if (selectedEditItemId !== null) {
+      router.push(`/raffle-creation/${selectedEditItemId}`);
+      setIsEditModalOpen(false);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedEditItemId(null);
   };
 
   // Handle Delete
@@ -328,6 +351,24 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
         onClose={handleCloseModal}
         onConfirm={handleConfirmDelete}
         message="Delete Raffle"
+        confirmButtonText="Delete"
+        cancelButtonText="Cancel"
+        description="Are you sure you want to delete this raffle? This action cannot be undone."
+        icon="/images/icon/delete-icon.png"
+        iconAlt="Delete"
+      />
+
+      {/* Edit Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onConfirm={handleConfirmEdit}
+        message="Edit Live Raffle"
+        confirmButtonText="Edit"
+        cancelButtonText="Cancel"
+        description="Are you sure you want to edit this live raffle? This action may affect the ongoing raffle."
+        icon="/images/icon/edit.svg"
+        iconAlt="Edit"
       />
     </>
   );
