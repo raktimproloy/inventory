@@ -628,6 +628,18 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               </select>
               {errors.claimWindow && <p className="text-red-500 text-sm mt-1">{errors.claimWindow}</p>}
             </div>
+            <div className="form-group flex items-center gap-2 justify-between mt-5">
+              <label htmlFor="pickupRequired" className="block text-sm font-medium text-gray-700">Pickup Required</label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={pickupRequired}
+                  onChange={(e) => setPickupRequired(e.target.checked)}
+                  className="sr-only peer" 
+                />
+                <div className="relative w-11 h-6 bg-blue-500 border border-[#D0D5DD] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:border after:border-red-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+              </label>
+            </div>
             <div className="form-group">
               <label htmlFor="eligibleRegions" className="block text-sm font-medium text-gray-700 mb-1">Eligible Regions*</label>
               <div className="relative">
@@ -710,25 +722,13 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               </div>
               {errors.eligibleRegions && <p className="text-red-500 text-sm mt-1">{errors.eligibleRegions}</p>}
             </div>
-            <div className="form-group flex items-center gap-2 justify-between">
-              <label htmlFor="pickupRequired" className="block text-sm font-medium text-gray-700">Pickup Required</label>
-              <label className="inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={pickupRequired}
-                  onChange={(e) => setPickupRequired(e.target.checked)}
-                  className="sr-only peer" 
-                />
-                <div className="relative w-11 h-6 bg-blue-500 border border-[#D0D5DD] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:border after:border-red-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
-              </label>
-            </div>
             <div className="form-group col-span-2">
-              <label htmlFor="retailValueUSD" className="block text-sm font-medium text-gray-700 mb-1">Retail Value (USD)*</label>
+              <label htmlFor="retailValueUSD" className="block text-sm font-medium text-gray-700 mb-1">Prize Value*</label>
               <input
                 className={`form-control ${errors.retailValueUSD ? 'border-red-500' : ''}`}
                 type="text"
                 id="retailValueUSD"
-                placeholder="Enter retail value in USD"
+                placeholder="$1000"
                 value={retailValueUSD}
                 onChange={e => setRetailValueUSD(e.target.value.replace(/[^\d.]/g, ''))}
                 name="retailValueUSD"
@@ -762,6 +762,18 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 onChange={e => setAgeRestriction(e.target.value)}
               />
               {errors.ageRestriction && <p className="text-red-500 text-sm mt-1">{errors.ageRestriction}</p>}
+            </div>
+            <div className="form-group col-span-2 mt-10 flex items-start gap-2 justify-between">
+              <label htmlFor="idRequired" className="block text-sm font-medium text-gray-700">ID Required</label>
+              <label className="inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={idRequired}
+                  onChange={(e) => setIdRequired(e.target.checked)}
+                  className="sr-only peer" 
+                />
+                <div className="relative w-11 h-6 bg-blue-500 border border-[#D0D5DD] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:border after:border-red-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+              </label>
             </div>
             <div className="form-group col-span-4">
               <label htmlFor="termsConditions" className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions*</label>
@@ -959,18 +971,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
               
               {errors.termsConditionsUrl && <p className="text-red-500 text-sm mt-1">{errors.termsConditionsUrl}</p>}
             </div>
-            <div className="form-group col-span-2 flex items-center gap-2 justify-between">
-              <label htmlFor="idRequired" className="block text-sm font-medium text-gray-700">ID Required</label>
-              <label className="inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={idRequired}
-                  onChange={(e) => setIdRequired(e.target.checked)}
-                  className="sr-only peer" 
-                />
-                <div className="relative w-11 h-6 bg-blue-500 border border-[#D0D5DD] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[1px] after:start-[1px] after:bg-white after:border after:border-red-500 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
-              </label>
-            </div>
+            
           </div>
         </AccordionSection>
 

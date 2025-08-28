@@ -249,7 +249,7 @@ const UserTable: React.FC<UserTableProps> = ({
               href="/user-management/user-create"
               className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
             >
-              + Create New
+              + Add Gamers
             </Link>
           </div>
         </div>
@@ -267,14 +267,14 @@ const UserTable: React.FC<UserTableProps> = ({
                 Access {sortConfig?.key === 'access' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
               </th>
               <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('registrationDate')}>
-                Date {sortConfig?.key === 'registrationDate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+                Registration Date {sortConfig?.key === 'registrationDate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
               </th>
               <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('status')}>
                 Status {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
               </th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('kycRequest')}>
-                KYC {sortConfig?.key === 'kycRequest' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
+              {/* <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('kycRequest')}>
+                KYC Request {sortConfig?.key === 'kycRequest' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
+              </th> */}
               <th className="py-3 px-6 text-[12px] font-medium text-gray">Action</th>
             </tr>
           </thead>
@@ -302,7 +302,7 @@ const UserTable: React.FC<UserTableProps> = ({
                     {item.status}
                   </span>
                 </td>
-                <td className="py-3 px-6 text-sm">
+                {/* <td className="py-3 px-6 text-sm">
                   <span className={`px-2 py-1 rounded-full text-xs border font-medium ${item.kycRequest === "Approved"
                       ? "text-[#067647] border-[#D0D5DD]"
                       : item.kycRequest === "Pending"
@@ -311,7 +311,7 @@ const UserTable: React.FC<UserTableProps> = ({
                     }`}>
                     {item.kycRequest}
                   </span>
-                </td>
+                </td> */}
                 <td className="py-3 px-6 text-sm">
                   <Dropdown
                     id={item.id}

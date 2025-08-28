@@ -65,7 +65,7 @@ const UserList: React.FC = () => {
   return (
     <div className="user-list">
       <UserTable
-        heading="Users List"
+        heading="Gamers List"
         items={usersData}
         onBlock={handleBlock}
         onUnblock={handleUnblock}

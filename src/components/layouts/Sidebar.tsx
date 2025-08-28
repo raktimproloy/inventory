@@ -94,13 +94,13 @@ const SidebarData: Array<SidebarData> = [
   },
   {
     id: 3,
-    title: "Game Creation",
+    title: "Game Database",
     url: "/raffle-creation",
     icon: "/images/icon/03.svg",
   },
   {
     id: 4,
-    title: "User Management",
+    title: "Gamers Management",
     url: "/user-management",
     icon: "/images/icon/04.svg",
   },

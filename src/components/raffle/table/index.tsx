@@ -240,7 +240,7 @@ const RaffleTable: React.FC<RaffleTablePropsWithHeading> = ({ heading, items, on
             </button>
             {filterOpen && renderFilterDropdown}
             <Link href="/raffle-creation/create-raffle" className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium">
-              + Create New
+              + Create Game
             </Link>
           </div>
         </div>

@@ -38,6 +38,8 @@ export interface FormData {
   gameDescription: string;
   createdAt: string;
   expiryDate: string;
+  startTime: string;
+  endTime: string;
   status: string;
 }
 
@@ -55,6 +57,8 @@ const validationSchema = yup.object().shape({
   gameDescription: yup.string().required("Game description is required").min(10, "Game description must be at least 10 characters"),
   createdAt: yup.string().required("Start Date is required"),
   expiryDate: yup.string().required("End Date is required"),
+  startTime: yup.string().required("Start Time is required"),
+  endTime: yup.string().required("End Time is required"),
   status: yup.string().required("Status is required"),
 });
 
@@ -197,8 +201,11 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     defaultValues: initialData || {
       status: "Active",
       category: "Gaming",
+      gameDescription: "Find the Ball",
       createdAt: getCurrentDate(),
       expiryDate: getTomorrowDate(),
+      startTime: "09:00",
+      endTime: "17:00",
     },
     resolver: yupResolver(validationSchema),
     mode: "onChange",
@@ -629,7 +636,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
               {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
             </div>
             <div className="form-group">
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category*</label>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Select Prize Category*</label>
               <select 
                 id="category" 
                 className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`} 
@@ -685,6 +692,33 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                 disabled={isLive || isEnded }
               />
               {errors.expiryDate && <p className="text-red-500 text-sm mt-1">{errors.expiryDate.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group">
+              <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">Start Time*</label>
+              <input
+                className={`form-control ${errors.startTime ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                type="time"
+                id="startTime"
+                {...register("startTime")}
+                onChange={(e) => handleInputChange("startTime", e.target.value)}
+                disabled={isLive || isEnded}
+              />
+              {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-1">End Time*</label>
+              <input
+                className={`form-control ${errors.endTime ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                type="time"
+                id="endTime"
+                {...register("endTime")}
+                onChange={(e) => handleInputChange("endTime", e.target.value)}
+                disabled={isLive || isEnded}
+              />
+              {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime.message}</p>}
             </div>
           </div>
 

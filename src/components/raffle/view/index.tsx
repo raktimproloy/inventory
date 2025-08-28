@@ -54,6 +54,18 @@ const ViewRaffle: React.FC = () => {
     return jsDate.toLocaleDateString("en-GB", options); // e.g., "15 Apr 2025"
   };
 
+  const formatTime = (time: string) => {
+    if (!time) return "N/A";
+    
+    // Convert 24-hour format to 12-hour format with AM/PM
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    
+    return `${displayHour}:${minutes} ${ampm}`;
+  };
+
   if (isLoading) return (
     <div className="border border-[rgb(208,213,221)] rounded-xl p-6 bg-white w-full">
       <p>Loading...</p>
@@ -84,8 +96,16 @@ const ViewRaffle: React.FC = () => {
           <p className="text-sm text-dark">{formatDate(raffles.createdAt)}</p>
         </div>
         <div className="form-group">
+          <label>Start Time</label>
+          <p className="text-sm text-dark">{formatTime(raffles.startTime)}</p>
+        </div>
+        <div className="form-group">
           <label>End Date</label>
           <p className="text-sm text-dark">{formatDate(raffles.expiryDate)}</p>
+        </div>
+        <div className="form-group">
+          <label>End Time</label>
+          <p className="text-sm text-dark">{formatTime(raffles.endTime)}</p>
         </div>
         
         <div className="form-group">
