@@ -244,7 +244,7 @@ const InventoryTable: React.FC<InventoryTablePropsWithHeading> = ({ heading, ite
                   </div>
                 </th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Key Details</th>
-                <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Price Value</th>
+                <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Prize Value</th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Sponsor</th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Stock Level</th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Status</th>

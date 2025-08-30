@@ -543,7 +543,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 onChange={e => setPrizeCategory(e.target.value)}
               >
                 <option value="">Select Prize Category</option>
-                <option value="Vehicle">Vehicle</option>
+                {/* <option value="Vehicle">Vehicle</option> */}
                 <option value="Lifestyle">Lifestyle</option>
                 <option value="Entertainment">Entertainment</option>
                 <option value="Devices">Devices</option>
