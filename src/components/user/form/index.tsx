@@ -24,6 +24,7 @@ export interface FormData {
 interface UserFormProps {
   formHeading: string;
   onSubmit: (data: FormData, file?: File | null) => void;
+  isLoading?: boolean;
 }
 
 const schema = yup.object().shape({
@@ -41,7 +42,7 @@ const schema = yup.object().shape({
   kycDocument: yup.string().optional(),
 });
 
-const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
+const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit, isLoading = false }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -77,17 +78,17 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
         <div className="grid md:grid-cols-2 grid-cols-1 gap-6">
           <div className="form-group">
             <label>User Name</label>
-            <input className="form-control" {...register("name")} />
+            <input className="form-control" {...register("name")} disabled={isLoading} />
             {errors.name && <p className="text-red-500">{errors.name.message}</p>}
           </div>
           <div className="form-group">
             <label>Email</label>
-            <input className="form-control" type="email" {...register("email")} />
+            <input className="form-control" type="email" {...register("email")} disabled={isLoading} />
             {errors.email && <p className="text-red-500">{errors.email.message}</p>}
           </div>
           <div className="form-group">
             <label>Access</label>
-            <select className="form-control" {...register("userType")}>
+            <select className="form-control" {...register("userType")} disabled={isLoading}>
               <option value="">Select</option>
               <option value="regular">Regular</option>
               <option value="admin">Admin</option>
@@ -96,19 +97,19 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
           </div>
           <div className="form-group">
             <label>Created At</label>
-            <input className="form-control" type="date" {...register("createdAt")} />
+            <input className="form-control" type="date" {...register("createdAt")} disabled={isLoading} />
             {errors.createdAt && <p className="text-red-500">{errors.createdAt.message}</p>}
           </div>
           <div className="form-group">
             <label>Status</label>
-            <select className="form-control" {...register("isBanned")}>
+            <select className="form-control" {...register("isBanned")} disabled={isLoading}>
               <option value="false">Active</option>
               <option value="true">Inactive</option>
             </select>
           </div>
           <div className="form-group">
             <label>KYC Request</label>
-            <select className="form-control" {...register("kycRequest")}>
+            <select className="form-control" {...register("kycRequest")} disabled={isLoading}>
               <option value="">Select</option>
               <option value="Approved">Approved</option>
               <option value="Pending">Pending</option>
@@ -119,12 +120,12 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
 
           <div className="form-group">
             <label>Tel Contact</label>
-            <input className="form-control" type="tel" placeholder="868 123 4567" {...register("telContact")} />
+            <input className="form-control" type="tel" placeholder="868 123 4567" {...register("telContact")} disabled={isLoading} />
           </div>
 
           <div className="form-group">
             <label>Gender</label>
-            <select className="form-control" {...register("gender")}>
+            <select className="form-control" {...register("gender")} disabled={isLoading}>
               <option value="">Please select</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -134,12 +135,12 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
 
           <div className="form-group">
             <label>Birthday</label>
-            <input className="form-control" type="date" {...register("birthday")} />
+            <input className="form-control" type="date" {...register("birthday")} disabled={isLoading} />
           </div>
 
           <div className="form-group">
             <label>Location</label>
-            <select className="form-control" {...register("location")}>
+            <select className="form-control" {...register("location")} disabled={isLoading}>
               <option value="">Please Select</option>
               <option value="arima">Arima</option>
               <option value="chaguanas">Chaguanas</option>
@@ -152,7 +153,7 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
 
           <div className="form-group">
             <label>Time Zone</label>
-            <select className="form-control" {...register("timeZone")}>
+            <select className="form-control" {...register("timeZone")} disabled={isLoading}>
               <option value="">Please Select</option>
               <option value="AST">Atlantic Standard Time (AST)</option>
               <option value="EST">Eastern Standard Time (EST)</option>
@@ -176,7 +177,8 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
                     <button
                       onClick={removeImage}
                       type="button"
-                      className="absolute top-2 right-2 bg-white text-gray-700 rounded-full shadow h-5 w-5 hover:bg-gray-100"
+                      disabled={isLoading}
+                      className="absolute top-2 right-2 bg-white text-gray-700 rounded-full shadow h-5 w-5 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label="Remove file"
                     >
                       ✕
@@ -195,7 +197,7 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
                   />
                 )}
               </div>
-              <label htmlFor="file-upload" className="cursor-pointer flex flex-col justify-center items-center text-center">
+              <label htmlFor="file-upload" className={`cursor-pointer flex flex-col justify-center items-center text-center ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <Image
                   src="/images/icon/upload-icon.png"
                   alt="Upload Icon"
@@ -209,7 +211,7 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
                 <span className="text-gray-500 text-sm text-center mt-2">
                   SVG, PNG, JPG, or GIF (max: 800x400px)
                 </span>
-                <input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                <input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" disabled={isLoading} />
               </label>
             </div>
           </div>
@@ -217,15 +219,27 @@ const UserForm: React.FC<UserFormProps> = ({ formHeading, onSubmit }) => {
           <div className="flex justify-end items-center gap-4 mt-6 col-span-2">
             <Link
               href="./"
-              className="inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium"
+              className={`inline-flex items-center gap-4 px-4 py-3 bg-white text-dark border border-[#E4E7EC] rounded-lg text-sm font-medium ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={isLoading ? (e) => e.preventDefault() : undefined}
             >
               Cancel
             </Link>
             <button
               type="submit"
-              className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
+              disabled={isLoading}
+              className={`inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium flex items-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-primary/90'}`}
             >
-              Save
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                'Save'
+              )}
             </button>
           </div>
         </div>

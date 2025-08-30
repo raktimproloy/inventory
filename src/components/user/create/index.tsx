@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import UserForm, { FormData } from "../form";
 import { toast } from "react-toastify";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -7,8 +7,11 @@ import { v4 as uuidv4 } from "uuid";
 import { db, storage } from "../../../../config/firebase.config";
 
 const CreateUser = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleCreateUser = async (formData: FormData, file?: File | null) => {
     try {
+      setIsLoading(true);
       let profilePictureUrl = "";
 
       if (file) {
@@ -40,10 +43,12 @@ const CreateUser = () => {
     } catch (error) {
       console.error("Error creating user:", error);
       toast.error("Failed to create user.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return <UserForm formHeading="Create User" onSubmit={handleCreateUser} />;
+  return <UserForm formHeading="Create User" onSubmit={handleCreateUser} isLoading={isLoading} />;
 };
 
 export default CreateUser;
