@@ -11,6 +11,7 @@ interface PrizeData {
   keywords?: string[];
   sponsorId?: string;
   sponsorName?: string;
+  prizeCategory?: string;
 }
 
 interface PrizeSelectionModalProps {
@@ -151,6 +152,7 @@ const PrizeSelectionModal: React.FC<PrizeSelectionModalProps> = ({ isOpen, onClo
                     <h3 className="font-medium text-sm text-dark truncate">{prize.prizeName}</h3>
                     <p className="text-xs text-gray-500 mt-1 font-medium">Qty: {prize.quantityAvailable}</p>
                     <p className="text-xs text-gray-400 mt-1 truncate">Price: ${prize.retailValueUSD}</p>
+                    <p className="text-xs text-gray-400 mt-1 truncate">Category: {prize.prizeCategory || 'N/A'}</p>
                     <p className="text-xs text-gray-400 mt-1 truncate">Status: {prize.status}</p>
                   </div>
                 </div>

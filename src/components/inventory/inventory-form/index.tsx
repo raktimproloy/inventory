@@ -546,6 +546,7 @@ const InventoryForm: React.FC<InventoryFormProps> = ({
                 {/* <option value="Vehicle">Vehicle</option> */}
                 <option value="Lifestyle">Lifestyle</option>
                 <option value="Entertainment">Entertainment</option>
+                <option value="vehicle">Vehicle</option>
                 <option value="Devices">Devices</option>
                 <option value="Electronics">Electronics</option>
                 <option value="Style">Style</option>

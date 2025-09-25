@@ -11,6 +11,7 @@ interface PrizeData {
   prizeName: string;
   retailValueUSD: string;
   thumbnail?: string;
+  prizeCategory?: string;
 }
 
 const ViewRaffle: React.FC = () => {
@@ -113,8 +114,12 @@ const ViewRaffle: React.FC = () => {
           <p className="text-sm text-dark">{raffles.ticketPrice ? `${raffles.ticketPrice} Gold Coin${raffles.ticketPrice > 1 ? 's' : ''}` : "N/A"}</p>
         </div>
         <div className="form-group">
-          <label>Game Description</label>
-          <p className="text-sm text-dark">{raffles.gameDescription || raffles.description}</p>
+          <label>Game Category</label>
+          <p className="text-sm text-dark">{raffles.gameDescription || "N/A"}</p>
+        </div>
+        <div className="form-group">
+          <label>Prize Category</label>
+          <p className="text-sm text-dark">{raffles.category || "N/A"}</p>
         </div>
         <div className="form-group">
           <label>Game Image</label>
@@ -154,6 +159,7 @@ const ViewRaffle: React.FC = () => {
           <label>Prize Name</label>
           <p className="text-sm text-dark">{prize ? prize.prizeName : "N/A"}</p>
         </div>
+        
         
         <div className="form-group">
         <label className="block">Prize Price</label>

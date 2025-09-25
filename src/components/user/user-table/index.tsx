@@ -263,9 +263,9 @@ const UserTable: React.FC<UserTableProps> = ({
               <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('email')}>
                 Email {sortConfig?.key === 'email' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
               </th>
-              <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('access')}>
+              {/* <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('access')}>
                 Access {sortConfig?.key === 'access' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-              </th>
+              </th> */}
               <th className="py-3 px-6 text-[12px] font-medium text-gray cursor-pointer" onClick={() => handleSort('registrationDate')}>
                 Registration Date {sortConfig?.key === 'registrationDate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
               </th>
@@ -292,7 +292,7 @@ const UserTable: React.FC<UserTableProps> = ({
                   </Link>
                 </td>
                 <td className="py-3 px-6 text-sm">{item.email}</td>
-                <td className="py-3 px-6 text-sm">{item.access}</td>
+                {/* <td className="py-3 px-6 text-sm">{item.access}</td> */}
                 <td className="py-3 px-6 text-sm">{formatDate(item.registrationDate)}</td>
                 <td className="py-3 px-6 text-sm">
                   <span className={`px-2 py-1 rounded-full text-xs border font-medium ${item.status === "Active"

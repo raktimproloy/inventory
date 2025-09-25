@@ -225,6 +225,10 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
           setSelectedPrizeId(prize.id);
           setSelectedPrizePrice(prize.retailValueUSD || null);
           setValue("description", prize.prizeName || "");
+          // Auto-select the prize category from the selected prize
+          if (prize.prizeCategory) {
+            setValue("category", prize.prizeCategory);
+          }
           if (prize.keywords && Array.isArray(prize.keywords) && prize.keywords.length) {
             setPrizeKeywords([
               prize.keywords[0] || "Keyword 1",
@@ -264,6 +268,10 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
         setSelectedPrizeId(prizeId);
         setSelectedPrizePrice(prize.retailValueUSD || null);
         setValue("description", prize.prizeName || "");
+        // Auto-select the prize category from the selected prize
+        if (prize.prizeCategory) {
+          setValue("category", prize.prizeCategory);
+        }
         if (prize.keywords && Array.isArray(prize.keywords) && prize.keywords.length) {
           setPrizeKeywords([
             prize.keywords[0] || "Keyword 1",
@@ -331,8 +339,12 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
 
   const handleImageSelect = (image: ImageData) => {
     setFile({ url: image.imageUrl });
-    setValue('category', image.gameCategory || '');
+    // Auto-fill game category when selecting game image
+    if (image.gameCategory) {
+      setValue("gameDescription", image.gameCategory);
+    }
     console.log("Image selected from library:", image.title);
+    console.log("Game category set to:", image.gameCategory);
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -341,10 +353,23 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
   };
 
   const handlePrizeSelect = (prize: any) => {
+    console.log("=== PRIZE SELECTION DEBUG ===");
+    console.log("Full prize object:", prize);
+    console.log("Prize category value:", prize.prizeCategory);
+    
     setSelectedPrize(prize);
     setSelectedPrizeId(prize.id);
     setSelectedPrizePrice(prize.retailValueUSD);
     setValue("description", prize.prizeName);
+    
+    // Auto-select the prize category from the selected prize
+    if (prize.prizeCategory) {
+      console.log("Setting category to:", prize.prizeCategory);
+      setValue("category", prize.prizeCategory);
+    } else {
+      console.log("No prize category found in prize object");
+    }
+    
     // Try to get keywords from prize, else use dummy
     if (prize.keywords && Array.isArray(prize.keywords) && prize.keywords.length) {
       setPrizeKeywords([
@@ -356,8 +381,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
       setPrizeKeywords(["Keyword 1", "Keyword 2", "Keyword 3"]);
     }
     setIsPrizeModalOpen(false);
-    console.log("Prize selected:", prize);
-    console.log("Keywords:", prize.keywords || ["Keyword 1", "Keyword 2", "Keyword 3"]);
+    console.log("=== END PRIZE SELECTION DEBUG ===");
   };
 
   const handleFormSubmit = async (data: any) => {
@@ -561,6 +585,63 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             </div>
           </div>
 
+          <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group">
+              <div className="flex items-center gap-1 mb-1">
+                <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-700 flex items-center gap-1" style={{ marginBottom: '0px' }}>
+                  Ticket Price*
+                </label>
+                <span className="relative group">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-gray-400 cursor-pointer ml-1">
+            <circle cx="12" cy="12" r="12" fill="#F87171" />
+            <text x="12" y="16" textAnchor="middle" fontSize="12" fill="#ffffff">i</text>
+          </svg>
+          <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20 group-hover:block">1 Gold Coin = $10</span>
+        </span>
+              </div>
+
+              <TicketPriceSelect
+                value={watchedValues.ticketPrice}
+                onChange={v => handleInputChange("ticketPrice", v)}
+                disabled={isLive || isEnded}
+              />
+              {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Select Prize Category*</label>
+              <select 
+                id="category" 
+                className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`} 
+                {...register("category")}
+                onChange={(e) => handleInputChange("category", e.target.value)}
+                disabled={isLive || isEnded}
+              >
+                <option value="">Select Prize Category</option>
+                <option value="Lifestyle">Lifestyle</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Vehicle">Vehicle</option>
+                <option value="Devices">Devices</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Style">Style</option>
+                <option value="Beauty & Grooming">Beauty & Grooming</option>
+              </select>
+              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
+              <input
+                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                type="text"
+                id="gameDescription"
+                placeholder="Enter game description"
+                {...register("gameDescription")}
+                onChange={(e) => handleInputChange("gameDescription", e.target.value)}
+                disabled={isLive || isEnded}
+              />
+              {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-1 grid-cols-1 gap-4 md:gap-6 mb-4">
             <div className="form-group col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Game Image</label>
@@ -613,58 +694,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
-            <div className="form-group">
-              <div className="flex items-center gap-1 mb-1">
-                <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-700 flex items-center gap-1" style={{ marginBottom: '0px' }}>
-                  Ticket Price*
-                </label>
-                <span className="relative group">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" className="text-gray-400 cursor-pointer ml-1">
-            <circle cx="12" cy="12" r="12" fill="#F87171" />
-            <text x="12" y="16" textAnchor="middle" fontSize="12" fill="#ffffff">i</text>
-          </svg>
-          <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap z-20 group-hover:block">1 Gold Coin = $10</span>
-        </span>
-              </div>
-
-              <TicketPriceSelect
-                value={watchedValues.ticketPrice}
-                onChange={v => handleInputChange("ticketPrice", v)}
-                disabled={isLive || isEnded}
-              />
-              {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Select Prize Category*</label>
-              <select 
-                id="category" 
-                className={`form-control ${errors.category ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`} 
-                {...register("category")}
-                onChange={(e) => handleInputChange("category", e.target.value)}
-                disabled={isLive || isEnded}
-              >
-                <option value="" selected>Select Category</option>
-                {gameCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
-              <input
-                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
-                type="text"
-                id="gameDescription"
-                placeholder="Enter game description"
-                {...register("gameDescription")}
-                onChange={(e) => handleInputChange("gameDescription", e.target.value)}
-                disabled={isLive || isEnded}
-              />
-              {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
-            </div>
-          </div>
+          
 
           <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
             <div className="form-group">
