@@ -245,12 +245,12 @@ const UserTable: React.FC<UserTableProps> = ({
               <span>Filter</span>
             </button>
             {filterOpen && renderFilterDropdown}
-            <Link
+            {/* <Link
               href="/user-management/user-create"
               className="inline-block px-4 py-3 bg-primary text-white rounded-lg text-sm font-medium"
             >
               + Add Gamers
-            </Link>
+            </Link> */}
           </div>
         </div>
 
