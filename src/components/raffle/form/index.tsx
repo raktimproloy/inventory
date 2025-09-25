@@ -54,7 +54,7 @@ const validationSchema = yup.object().shape({
   description: yup.string().required("Prize description is required"),
   ticketPrice: yup.number().typeError("Ticket price must be a number").required("Ticket price is required").positive("Ticket price must be positive"),
   category: yup.string().required("Category is required"),
-  gameDescription: yup.string().required("Game description is required").min(10, "Game description must be at least 10 characters"),
+  gameDescription: yup.string().required("Game category is required").min(3, "Game category must be at least 10 characters"),
   createdAt: yup.string().required("Start Date is required"),
   expiryDate: yup.string().required("End Date is required"),
   startTime: yup.string().required("Start Time is required"),
@@ -628,12 +628,12 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
               {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
             </div>
             <div className="form-group">
-              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
+              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Category*</label>
               <input
                 className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
                 type="text"
                 id="gameDescription"
-                placeholder="Enter game description"
+                placeholder="Enter game category"
                 {...register("gameDescription")}
                 onChange={(e) => handleInputChange("gameDescription", e.target.value)}
                 disabled={isLive || isEnded}
