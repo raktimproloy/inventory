@@ -161,7 +161,7 @@ const GamesTable: React.FC<GamesTableProps> = ({ heading, items, onDelete }) => 
                   </div>
                 </th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Ticket Sold</th>
-                <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Price</th>
+                <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Prize Value</th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Sponsor</th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Time to End</th>
                 <th className="text-[12px] font-medium text-gray border-0 py-3 px-6">Status</th>

@@ -166,7 +166,7 @@ const ViewRaffle: React.FC = () => {
         
         
         <div className="form-group">
-        <label className="block">Prize Price</label>
+        <label className="block">Prize Value</label>
           <span className="text-sm text-dark">{prize ? prize.retailValueUSD : "N/A"}</span>
         </div>
       </div>

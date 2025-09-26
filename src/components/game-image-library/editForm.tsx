@@ -240,14 +240,16 @@ const EditImagePage = () => {
                                 className={`form-control ${errors.gameCategory ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors`}
                             >
                                 <option value="">Select Game Category</option>
-                                <option value="Action">Action</option>
-                                <option value="Adventure">Adventure</option>
-                                <option value="RPG">RPG</option>
-                                <option value="Strategy">Strategy</option>
-                                <option value="Sports">Sports</option>
-                                <option value="Racing">Racing</option>
-                                <option value="Puzzle">Puzzle</option>
-                                <option value="Other">Other</option>
+                                <option value="football">Football</option>
+                                <option value="cricket">Cricket</option>
+                                <option value="basketball">Basketball</option>
+                                <option value="tennis">Tennis</option>
+                                <option value="rugby">Rugby</option>
+                                <option value="volleyball">Volleyball</option>
+                                <option value="netball">Netball</option>
+                                <option value="hockey">Hockey</option>
+                                <option value="golf">Golf</option>
+                                <option value="other">Other</option>
                             </select>
                             {errors.gameCategory && <p className="text-red-500 text-sm mt-1">{errors.gameCategory}</p>}
                         </div>

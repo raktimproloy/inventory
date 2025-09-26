@@ -209,6 +209,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
       expiryDate: getTomorrowDate(),
       startTime: "09:00",
       endTime: "17:00",
+      ticketPrice: 1,
     },
     resolver: yupResolver(validationSchema),
     mode: "onChange",
@@ -402,13 +403,12 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
         sponsorId = selectedPrize.sponsorId;
       }
 
-      const formData: FormData & { prizeId?: string; ticketPrice?: string; sponsorId?: string } = {
+      const formData: FormData & { prizeId?: string; sponsorId?: string } = {
         ...data,
         picture: file?.url || "",
         createdAt: new Date(data.createdAt).toISOString(),
         expiryDate: new Date(data.expiryDate).toISOString(),
         prizeId: selectedPrizeId || undefined,
-        ticketPrice: selectedPrizePrice || undefined,
         ...(sponsorId ? { sponsorId } : {}),
       };
 
@@ -603,9 +603,16 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
         </span>
               </div>
 
+              <input
+                type="hidden"
+                {...register("ticketPrice")}
+              />
               <TicketPriceSelect
-                value={watchedValues.ticketPrice}
-                onChange={v => handleInputChange("ticketPrice", v)}
+                value={watchedValues.ticketPrice || 0}
+                onChange={v => {
+                  setValue("ticketPrice", v);
+                  handleInputChange("ticketPrice", v);
+                }}
                 disabled={isLive || isEnded}
               />
               {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice.message}</p>}
