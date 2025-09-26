@@ -17,7 +17,9 @@ const CreateAdmin: React.FC = () => {
 
       // Upload image if provided
       if (file) {
-        profilePictureUrl = await uploadImageToFirebase(file);
+        console.log("Uploading admin profile image to Firebase...");
+        profilePictureUrl = await uploadImageToFirebase(file, "admin-profiles");
+        console.log("Admin profile image uploaded successfully:", profilePictureUrl);
       }
 
       // Prepare admin data
@@ -28,8 +30,11 @@ const CreateAdmin: React.FC = () => {
         updatedAt: new Date().toISOString(),
       };
 
+      console.log("Saving admin data to Firestore:", adminData);
+
       // Save to Firestore
-      await addDoc(collection(db, "admins"), adminData);
+      const docRef = await addDoc(collection(db, "admins"), adminData);
+      console.log("Admin created with ID:", docRef.id);
 
       toast.success("Admin created successfully!");
       router.push("/admin-management");

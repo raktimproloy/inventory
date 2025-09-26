@@ -115,6 +115,10 @@ const ViewRaffle: React.FC = () => {
         </div>
         <div className="form-group">
           <label>Game Category</label>
+          <p className="text-sm text-dark">{raffles.gameCategory || "N/A"}</p>
+        </div>
+        <div className="form-group">
+          <label>Game Description</label>
           <p className="text-sm text-dark">{raffles.gameDescription || "N/A"}</p>
         </div>
         <div className="form-group">

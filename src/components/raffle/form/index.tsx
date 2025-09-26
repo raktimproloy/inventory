@@ -35,6 +35,7 @@ export interface FormData {
   description: string;
   ticketPrice: number;
   category: string;
+  gameCategory: string;
   gameDescription: string;
   createdAt: string;
   expiryDate: string;
@@ -54,7 +55,8 @@ const validationSchema = yup.object().shape({
   description: yup.string().required("Prize description is required"),
   ticketPrice: yup.number().typeError("Ticket price must be a number").required("Ticket price is required").positive("Ticket price must be positive"),
   category: yup.string().required("Category is required"),
-  gameDescription: yup.string().required("Game category is required").min(3, "Game category must be at least 10 characters"),
+  gameCategory: yup.string().required("Game category is required").min(3, "Game category must be at least 3 characters"),
+  gameDescription: yup.string().required("Game description is required").min(10, "Game description must be at least 10 characters"),
   createdAt: yup.string().required("Start Date is required"),
   expiryDate: yup.string().required("End Date is required"),
   startTime: yup.string().required("Start Time is required"),
@@ -201,7 +203,8 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     defaultValues: initialData || {
       status: "Active",
       category: "Gaming",
-      gameDescription: "Find the Ball",
+      gameCategory: "",
+      gameDescription: "Find the ball",
       createdAt: getCurrentDate(),
       expiryDate: getTomorrowDate(),
       startTime: "09:00",
@@ -341,7 +344,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
     setFile({ url: image.imageUrl });
     // Auto-fill game category when selecting game image
     if (image.gameCategory) {
-      setValue("gameDescription", image.gameCategory);
+      setValue("gameCategory", image.gameCategory);
     }
     console.log("Image selected from library:", image.title);
     console.log("Game category set to:", image.gameCategory);
@@ -585,7 +588,7 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 grid-cols-1 gap-4 md:gap-6 mb-4">
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
             <div className="form-group">
               <div className="flex items-center gap-1 mb-1">
                 <label htmlFor="ticketPrice" className="block text-sm font-medium text-gray-700 flex items-center gap-1" style={{ marginBottom: '0px' }}>
@@ -626,19 +629,6 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
                 <option value="Beauty & Grooming">Beauty & Grooming</option>
               </select>
               {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Category*</label>
-              <input
-                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
-                type="text"
-                id="gameDescription"
-                placeholder="Enter game category"
-                {...register("gameDescription")}
-                onChange={(e) => handleInputChange("gameDescription", e.target.value)}
-                disabled={isLive || isEnded}
-              />
-              {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
             </div>
           </div>
 
@@ -694,7 +684,34 @@ const RaffleForm: React.FC<RaffleFormProps> = ({ formHeading, initialData, onSub
             </div>
           </div>
 
-          
+          <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
+            <div className="form-group">
+              <label htmlFor="gameCategory" className="block text-sm font-medium text-gray-700 mb-1">Game Category*</label>
+              <input
+                className={`form-control ${errors.gameCategory ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                type="text"
+                id="gameCategory"
+                placeholder="Enter game category (e.g., Puzzle, Action, Strategy)"
+                {...register("gameCategory")}
+                onChange={(e) => handleInputChange("gameCategory", e.target.value)}
+                disabled={isLive || isEnded}
+              />
+              {errors.gameCategory && <p className="text-red-500 text-sm mt-1">{errors.gameCategory.message}</p>}
+            </div>
+            <div className="form-group">
+              <label htmlFor="gameDescription" className="block text-sm font-medium text-gray-700 mb-1">Game Description*</label>
+              <input
+                className={`form-control ${errors.gameDescription ? 'border-red-500 focus:border-red-500' : 'focus:border-blue-500'} transition-colors${isLive || isEnded ? ' bg-black opacity-10 text-white cursor-not-allowed' : ''}`}
+                id="gameDescription"
+                placeholder="Describe how to play the game..."
+                // rows={3}
+                {...register("gameDescription")}
+                onChange={(e) => handleInputChange("gameDescription", e.target.value)}
+                disabled={isLive || isEnded}
+              />
+              {errors.gameDescription && <p className="text-red-500 text-sm mt-1">{errors.gameDescription.message}</p>}
+            </div>
+          </div>
 
           <div className="grid md:grid-cols-2 grid-cols-1 gap-4 md:gap-6 mb-4">
             <div className="form-group">

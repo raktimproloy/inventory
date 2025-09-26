@@ -128,4 +128,10 @@ const SidebarData: Array<SidebarData> = [
     url: "/partner-management",
     icon: "/images/icon/04.svg",
   },
+  {
+    id: 9,
+    title: "Admin Management",
+    url: "/admin-management",
+    icon: "/images/icon/04.svg",
+  },
 ];
